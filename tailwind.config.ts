@@ -57,6 +57,30 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        panel: {
+          DEFAULT: "hsl(var(--panel-bg))",
+          border: "hsl(var(--panel-border))",
+        },
+        fretboard: {
+          DEFAULT: "hsl(var(--fretboard-bg))",
+          fret: "hsl(var(--fretboard-fret))",
+          string: "hsl(var(--fretboard-string))",
+          inlay: "hsl(var(--fretboard-inlay))",
+          nut: "hsl(var(--fretboard-nut))",
+        },
+        degree: {
+          1: "hsl(var(--degree-1))",
+          2: "hsl(var(--degree-2))",
+          3: "hsl(var(--degree-3))",
+          4: "hsl(var(--degree-4))",
+          5: "hsl(var(--degree-5))",
+          6: "hsl(var(--degree-6))",
+          7: "hsl(var(--degree-7))",
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       borderRadius: {
         lg: "var(--radius)",
