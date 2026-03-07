@@ -31,6 +31,8 @@ interface ControlPanelProps {
   setColorMode: (c: 'degree' | 'note' | 'function') => void;
   noteSize: number;
   setNoteSize: (n: number) => void;
+  show24Frets: boolean;
+  setShow24Frets: (b: boolean) => void;
 }
 
 const VIEW_MODES: { value: ViewMode; label: string; icon: string }[] = [
@@ -58,6 +60,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   darkMode, setDarkMode,
   colorMode, setColorMode,
   noteSize, setNoteSize,
+  show24Frets, setShow24Frets,
 }) => {
   return (
     <aside className="w-72 shrink-0 h-screen overflow-y-auto bg-card border-r border-border p-4 space-y-5 scrollbar-thin">
@@ -188,6 +191,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           onChange={e => setNoteSize(Number(e.target.value))}
           className="w-full accent-primary"
         />
+      </Section>
+
+      {/* Braço */}
+      <Section title="Braço">
+        <Toggle label="Mostrar até casa 24" checked={show24Frets} onChange={setShow24Frets} />
       </Section>
 
       {/* Dark mode */}
