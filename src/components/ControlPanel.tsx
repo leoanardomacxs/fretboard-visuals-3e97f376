@@ -1,0 +1,224 @@
+import React from 'react';
+import {
+  ALL_ROOTS,
+  SCALE_CATEGORIES,
+  type ChordInfo,
+} from '@/lib/musicTheory';
+
+export type ViewMode = 
+  | 'full' | 'position' | 'caged' | 'intervals' | 'notes' 
+  | 'degrees' | 'notes-degrees' | 'tensions'
+  | 'chord' | 'harmonic-field' | 'harmonic-matrix'
+  | 'compare-pentatonics' | 'improvisation';
+
+interface ControlPanelProps {
+  root: string;
+  setRoot: (r: string) => void;
+  scaleType: string;
+  setScaleType: (s: string) => void;
+  viewMode: ViewMode;
+  setViewMode: (v: ViewMode) => void;
+  selectedChord: ChordInfo | null;
+  setSelectedChord: (c: ChordInfo | null) => void;
+  harmonicField: ChordInfo[];
+  showArpeggio: boolean;
+  setShowArpeggio: (b: boolean) => void;
+  showPentatonic: boolean;
+  setShowPentatonic: (b: boolean) => void;
+  darkMode: boolean;
+  setDarkMode: (b: boolean) => void;
+  colorMode: 'degree' | 'note' | 'function';
+  setColorMode: (c: 'degree' | 'note' | 'function') => void;
+  noteSize: number;
+  setNoteSize: (n: number) => void;
+}
+
+const VIEW_MODES: { value: ViewMode; label: string; icon: string }[] = [
+  { value: 'full', label: 'Escala Completa', icon: '🎸' },
+  { value: 'intervals', label: 'Intervalos', icon: '📏' },
+  { value: 'notes', label: 'Notas', icon: '🎵' },
+  { value: 'degrees', label: 'Graus', icon: '🔢' },
+  { value: 'notes-degrees', label: 'Notas + Graus', icon: '📋' },
+  { value: 'tensions', label: 'Tensões', icon: '⚡' },
+  { value: 'chord', label: 'Acorde', icon: '🎶' },
+  { value: 'harmonic-field', label: 'Campo Harmônico', icon: '🏗️' },
+  { value: 'harmonic-matrix', label: 'Matriz Harmônica', icon: '📊' },
+  { value: 'compare-pentatonics', label: 'Comparar Pentatônicas', icon: '🔄' },
+  { value: 'improvisation', label: 'Improvisação', icon: '🎤' },
+];
+
+const ControlPanel: React.FC<ControlPanelProps> = ({
+  root, setRoot,
+  scaleType, setScaleType,
+  viewMode, setViewMode,
+  selectedChord, setSelectedChord,
+  harmonicField,
+  showArpeggio, setShowArpeggio,
+  showPentatonic, setShowPentatonic,
+  darkMode, setDarkMode,
+  colorMode, setColorMode,
+  noteSize, setNoteSize,
+}) => {
+  return (
+    <aside className="w-72 shrink-0 h-screen overflow-y-auto bg-card border-r border-border p-4 space-y-5 scrollbar-thin">
+      {/* Header */}
+      <div className="flex items-center gap-2 pb-3 border-b border-border">
+        <span className="text-2xl">🎸</span>
+        <div>
+          <h1 className="text-base font-bold text-foreground leading-tight">Guitar Theory</h1>
+          <p className="text-xs text-muted-foreground">Estudo Visual Interativo</p>
+        </div>
+      </div>
+
+      {/* Tonalidade */}
+      <Section title="Tonalidade">
+        <div className="grid grid-cols-6 gap-1">
+          {ALL_ROOTS.map(n => (
+            <button
+              key={n}
+              onClick={() => setRoot(n)}
+              className={`px-1 py-1.5 rounded text-xs font-semibold transition-all ${
+                root === n
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      {/* Escala */}
+      <Section title="Escala">
+        {Object.entries(SCALE_CATEGORIES).map(([cat, scales]) => (
+          <div key={cat} className="mb-2">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-semibold">{cat}</p>
+            <div className="space-y-0.5">
+              {scales.map(s => (
+                <button
+                  key={s}
+                  onClick={() => setScaleType(s)}
+                  className={`w-full text-left px-2 py-1 rounded text-xs transition-all ${
+                    scaleType === s
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-foreground hover:bg-secondary'
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </Section>
+
+      {/* Visualização */}
+      <Section title="Visualização">
+        <div className="space-y-0.5">
+          {VIEW_MODES.map(m => (
+            <button
+              key={m.value}
+              onClick={() => setViewMode(m.value)}
+              className={`w-full text-left px-2 py-1.5 rounded text-xs transition-all flex items-center gap-2 ${
+                viewMode === m.value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-foreground hover:bg-secondary'
+              }`}
+            >
+              <span>{m.icon}</span>
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      {/* Campo Harmônico - Acordes */}
+      {(viewMode === 'chord' || viewMode === 'improvisation') && (
+        <Section title="Acordes">
+          <div className="space-y-0.5">
+            {harmonicField.map(ch => (
+              <button
+                key={ch.name}
+                onClick={() => setSelectedChord(ch)}
+                className={`w-full text-left px-2 py-1.5 rounded text-xs transition-all ${
+                  selectedChord?.name === ch.name
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-foreground hover:bg-secondary'
+                }`}
+              >
+                <span className="font-mono text-muted-foreground mr-2">{ch.romanNumeral}</span>
+                <span className="font-semibold">{ch.name}</span>
+              </button>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Opções */}
+      {(viewMode === 'chord' || viewMode === 'improvisation') && (
+        <Section title="Mostrar">
+          <Toggle label="Arpejo" checked={showArpeggio} onChange={setShowArpeggio} />
+          <Toggle label="Pentatônica" checked={showPentatonic} onChange={setShowPentatonic} />
+        </Section>
+      )}
+
+      {/* Cores */}
+      <Section title="Cores">
+        {(['degree', 'note', 'function'] as const).map(c => (
+          <button
+            key={c}
+            onClick={() => setColorMode(c)}
+            className={`w-full text-left px-2 py-1 rounded text-xs transition-all ${
+              colorMode === c ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-secondary'
+            }`}
+          >
+            {c === 'degree' ? 'Por Grau' : c === 'note' ? 'Por Nota' : 'Por Função'}
+          </button>
+        ))}
+      </Section>
+
+      {/* Tamanho */}
+      <Section title="Tamanho das Notas">
+        <input
+          type="range"
+          min={8}
+          max={20}
+          value={noteSize}
+          onChange={e => setNoteSize(Number(e.target.value))}
+          className="w-full accent-primary"
+        />
+      </Section>
+
+      {/* Dark mode */}
+      <Section title="Tema">
+        <Toggle label="Modo Noturno" checked={darkMode} onChange={setDarkMode} />
+      </Section>
+    </aside>
+  );
+};
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2 font-bold">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (b: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 py-1 cursor-pointer">
+      <div
+        onClick={() => onChange(!checked)}
+        className={`w-8 h-4 rounded-full transition-colors relative ${checked ? 'bg-primary' : 'bg-secondary'}`}
+      >
+        <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-primary-foreground shadow transition-transform ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
+      </div>
+      <span className="text-xs text-foreground">{label}</span>
+    </label>
+  );
+}
+
+export default ControlPanel;
