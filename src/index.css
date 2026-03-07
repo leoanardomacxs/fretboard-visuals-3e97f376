@@ -44,12 +44,12 @@
     --degree-6: 270 60% 55%;
     --degree-7: 220 20% 25%;
 
-    /* Fretboard colors */
-    --fretboard-bg: 35 30% 30%;
-    --fretboard-fret: 40 15% 65%;
-    --fretboard-string: 40 10% 55%;
-    --fretboard-inlay: 40 10% 45%;
-    --fretboard-nut: 40 5% 85%;
+    /* Fretboard colors — minimalist */
+    --fretboard-bg: 220 10% 90%;
+    --fretboard-fret: 220 10% 70%;
+    --fretboard-string: 220 10% 55%;
+    --fretboard-inlay: 220 10% 50%;
+    --fretboard-nut: 220 15% 25%;
 
     /* Panel */
     --panel-bg: 0 0% 100%;
@@ -102,11 +102,11 @@
     --degree-6: 270 55% 62%;
     --degree-7: 220 15% 65%;
 
-    --fretboard-bg: 25 15% 18%;
-    --fretboard-fret: 40 8% 35%;
-    --fretboard-string: 40 5% 42%;
-    --fretboard-inlay: 40 5% 28%;
-    --fretboard-nut: 40 5% 50%;
+    --fretboard-bg: 220 10% 20%;
+    --fretboard-fret: 220 8% 35%;
+    --fretboard-string: 220 5% 50%;
+    --fretboard-inlay: 220 5% 40%;
+    --fretboard-nut: 220 5% 65%;
 
     --panel-bg: 220 20% 12%;
     --panel-border: 220 15% 20%;
