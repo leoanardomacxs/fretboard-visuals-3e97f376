@@ -64,6 +64,7 @@ const Index: React.FC = () => {
             <div className="overflow-x-auto pb-4">
               <GuitarFretboard
                 notes={scaleNotes}
+                maxFret={currentMaxFret}
                 showNoteNames={getShowNotes()}
                 showDegrees={getShowDegrees()}
                 colorMode={colorMode}
@@ -86,6 +87,7 @@ const Index: React.FC = () => {
             <div className="overflow-x-auto pb-4">
               <GuitarFretboard
                 notes={scaleNotes}
+                maxFret={currentMaxFret}
                 showNoteNames={false}
                 showDegrees={true}
                 colorMode={colorMode}
@@ -119,6 +121,7 @@ const Index: React.FC = () => {
             <div className="overflow-x-auto pb-4">
               <GuitarFretboard
                 notes={scaleNotes}
+                maxFret={currentMaxFret}
                 showNoteNames={true}
                 colorMode={colorMode}
                 noteRadius={noteSize}
@@ -149,6 +152,7 @@ const Index: React.FC = () => {
         <div className="overflow-x-auto pb-2">
           <GuitarFretboard
             notes={chordNotes}
+            maxFret={currentMaxFret}
             showNoteNames={true}
             colorMode={colorMode}
             noteRadius={noteSize}
@@ -160,6 +164,7 @@ const Index: React.FC = () => {
           <div className="overflow-x-auto pb-2">
             <GuitarFretboard
               notes={arpNotes}
+              maxFret={currentMaxFret}
               showNoteNames={true}
               colorMode={colorMode}
               noteRadius={noteSize}
@@ -171,6 +176,7 @@ const Index: React.FC = () => {
           <div className="overflow-x-auto pb-2">
             <GuitarFretboard
               notes={pentNotes}
+              maxFret={currentMaxFret}
               showNoteNames={true}
               showDegrees={true}
               colorMode={colorMode}
@@ -182,6 +188,7 @@ const Index: React.FC = () => {
         <div className="overflow-x-auto pb-2">
           <GuitarFretboard
             notes={scaleNotes}
+            maxFret={currentMaxFret}
             showNoteNames={true}
             colorMode={colorMode}
             noteRadius={noteSize * 0.85}
@@ -201,6 +208,7 @@ const Index: React.FC = () => {
           <div key={ch.name} className="overflow-x-auto pb-2">
             <GuitarFretboard
               notes={notes}
+              maxFret={currentMaxFret}
               showNoteNames={true}
               showDegrees={true}
               colorMode={colorMode}
@@ -252,6 +260,7 @@ const Index: React.FC = () => {
             <div key={note} className="overflow-x-auto pb-2">
               <GuitarFretboard
                 notes={notes}
+                maxFret={currentMaxFret}
                 showNoteNames={true}
                 showDegrees={true}
                 colorMode={colorMode}
@@ -286,6 +295,7 @@ const Index: React.FC = () => {
         <div className="overflow-x-auto pb-2">
           <GuitarFretboard
             notes={chordNotes}
+            maxFret={currentMaxFret}
             showNoteNames={true}
             colorMode={colorMode}
             noteRadius={noteSize}
@@ -296,6 +306,7 @@ const Index: React.FC = () => {
         <div className="overflow-x-auto pb-2">
           <GuitarFretboard
             notes={pentNotes}
+            maxFret={currentMaxFret}
             showNoteNames={true}
             showDegrees={true}
             colorMode={colorMode}
@@ -306,6 +317,7 @@ const Index: React.FC = () => {
         <div className="overflow-x-auto pb-2">
           <GuitarFretboard
             notes={scaleNotes}
+            maxFret={currentMaxFret}
             showNoteNames={true}
             colorMode={colorMode}
             noteRadius={noteSize * 0.85}
