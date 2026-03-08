@@ -173,9 +173,11 @@ const GuitarFretboard: React.FC<GuitarFretboardProps> = ({
         })}
 
         {/* Strings — horizontal lines with slight thickness variation */}
+        {/* String 0 = low E at bottom, string 5 = high E at top */}
         {Array.from({ length: 6 }, (_, i) => {
           const y = paddingTop + i * stringSpacing;
-          const thickness = 0.7 + (5 - i) * 0.15;
+          // i=0 is top (high E, thin), i=5 is bottom (low E, thick)
+          const thickness = 0.7 + i * 0.15;
           return (
             <line
               key={`string-${i}`}
@@ -244,7 +246,7 @@ const GuitarFretboard: React.FC<GuitarFretboardProps> = ({
           const x = note.fret === 0
             ? paddingLeft - 6
             : paddingLeft + (note.fret - startFret - 0.5) * fretWidth;
-          const y = paddingTop + note.string * stringSpacing;
+          const y = paddingTop + (5 - note.string) * stringSpacing;
           const r = note.isRoot ? noteRadius * 1.15 : noteRadius;
           const color = getNoteColor(note);
           const label = getLabel(note);
