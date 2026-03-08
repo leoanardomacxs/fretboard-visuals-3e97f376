@@ -3,6 +3,7 @@ import GuitarFretboard from '@/components/GuitarFretboard';
 import ControlPanel, { type ViewMode, DEGREE_PALETTES, NOTE_PALETTES, FUNCTION_PALETTES } from '@/components/ControlPanel';
 import ChordGeneratorView from '@/components/ChordGeneratorView';
 import ProgressionGeneratorView from '@/components/ProgressionGeneratorView';
+import HarmonicFieldView from '@/components/HarmonicFieldView';
 import {
   getScale,
   getHarmonicField,
@@ -143,6 +144,9 @@ const Index: React.FC = () => {
 
       case 'progressions':
         return <ProgressionGeneratorView root={root} setRoot={setRoot} />;
+
+      case 'harmonic-field-view':
+        return <HarmonicFieldView root={root} setRoot={setRoot} />;
 
       default:
         return (
