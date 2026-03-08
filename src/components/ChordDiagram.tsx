@@ -2,7 +2,7 @@ import React from 'react';
 import type { ChordVoicing } from '@/lib/chordGenerator';
 import { NOTES } from '@/lib/musicTheory';
 
-const OPEN_STRINGS_SEMI = [0, 5, 10, 3, 7, 0]; // E A D G B E in semitones from C
+const OPEN_STRINGS_SEMI = [4, 9, 2, 7, 11, 4]; // E A D G B E in semitones from C
 
 interface ChordDiagramProps {
   voicing: ChordVoicing;
