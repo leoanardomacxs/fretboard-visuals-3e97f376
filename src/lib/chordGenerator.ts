@@ -102,7 +102,7 @@ export function generateChordVoicings(root: string, chordType: string, maxResult
   const deduped = deduplicateVoicings(voicings);
 
   // Sort by score (easy → hard)
-  deduped.sort((a, b) => a.score - b.score);
+  deduped.sort((a, b) => a.score - b.score || a.startFret - b.startFret);
 
   return deduped.slice(0, maxResults);
 }

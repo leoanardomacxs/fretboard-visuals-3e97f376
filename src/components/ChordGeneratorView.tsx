@@ -56,7 +56,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
         const v = generateChordVoicings(root, key, 3);
         v.forEach(voicing => allVoicings.push({ ...voicing, typeLabel: def.label || key }));
       }
-      allVoicings.sort((a, b) => a.score - b.score);
+      allVoicings.sort((a, b) => a.score - b.score || a.startFret - b.startFret);
       return allVoicings;
     }
     // For maj9, also include no5 voicings
@@ -64,7 +64,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
       const full = generateChordVoicings(root, 'maj9', 25);
       const no5 = generateChordVoicings(root, 'maj9no5', 25);
       const combined = [...full, ...no5];
-      combined.sort((a, b) => a.score - b.score);
+      combined.sort((a, b) => a.score - b.score || a.startFret - b.startFret);
       return combined.slice(0, 40);
     }
     return generateChordVoicings(root, selectedType, 40);
