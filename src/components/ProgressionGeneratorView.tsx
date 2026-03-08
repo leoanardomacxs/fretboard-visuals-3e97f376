@@ -176,14 +176,14 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
               : 'border-border bg-secondary text-foreground'
           }`}
         >
-          {allKeys ? '🌍 Todos os Tons' : `🎵 Tom de ${root}`}
+          {allKeys ? 'Todos os Tons' : `Tom de ${root}`}
         </button>
 
         <button
           onClick={generateNew}
           className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm shadow-md hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
         >
-          🎲 Gerar Aleatória
+          Gerar Aleatória
         </button>
 
         {/* Ear training display toggle */}
@@ -200,7 +200,7 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
               : 'border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400'
           }`}
         >
-          {displayMode === 'full' ? '👁️ Tudo Visível' : displayMode === 'degrees' ? '🎯 Só Graus' : '👂 Oculto (Treino)'}
+          {displayMode === 'full' ? 'Tudo Visível' : displayMode === 'degrees' ? 'Só Graus' : 'Oculto (Treino)'}
         </button>
 
         {currentProgression && (
@@ -213,7 +213,7 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
                 : 'bg-accent text-accent-foreground hover:shadow-md hover:scale-[1.02] active:scale-95'
             }`}
           >
-            {isPlaying ? '🔊 Tocando...' : '▶️ Tocar Progressão'}
+            {isPlaying ? 'Tocando...' : 'Tocar Progressão'}
           </button>
         )}
 
@@ -266,7 +266,7 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
           {/* Ear training hint */}
           {displayMode !== 'full' && (
             <p className="text-xs text-muted-foreground italic">
-              🎧 {displayMode === 'degrees' ? 'Nomes dos acordes ocultos — ouça e tente identificar!' : 'Tudo oculto — treine seu ouvido!'}
+              {displayMode === 'degrees' ? 'Nomes dos acordes ocultos — ouça e tente identificar!' : 'Tudo oculto — treine seu ouvido!'}
             </p>
           )}
 
@@ -310,7 +310,7 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
                   )}
                   {displayMode === 'hidden' && (
                     <div className="w-[130px] h-[180px] flex items-center justify-center">
-                      <span className="text-3xl opacity-30">👂</span>
+                      <span className="text-5xl font-bold opacity-30 text-muted-foreground">?</span>
                     </div>
                   )}
 
