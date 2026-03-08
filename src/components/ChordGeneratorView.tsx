@@ -31,6 +31,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
   const [selectedType, setSelectedType] = useState('major');
   const [rootOpen, setRootOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const typeRef = useRef<HTMLDivElement>(null);
   const categories = useMemo(() => getChordTypeCategories(), []);
