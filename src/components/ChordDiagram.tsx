@@ -198,7 +198,7 @@ const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160, showN
               textAnchor="middle"
               dominantBaseline="central"
               fill="hsl(var(--background))"
-              style={{ fontSize: showNotes ? 8 : 9, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}
+              style={{ fontSize: 9, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}
             >
               {showNotes ? noteName : (fingers[s] || '')}
             </text>
