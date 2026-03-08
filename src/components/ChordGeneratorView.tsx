@@ -185,10 +185,13 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
       {voicings.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {voicings.map((v, i) => {
-            const difficultyColor = v.score < 30 ? 'border-green-500/40' :
-              v.score < 60 ? 'border-yellow-500/40' : 'border-red-500/40';
-            const difficultyBg = v.score < 30 ? 'bg-green-500/5' :
-              v.score < 60 ? 'bg-yellow-500/5' : 'bg-red-500/5';
+            // Distribution-based: ~45% easy, ~40% medium, ~15% hard
+            const easyLimit = Math.ceil(voicings.length * 0.45);
+            const mediumLimit = Math.ceil(voicings.length * 0.85);
+            const difficultyColor = i < easyLimit ? 'border-green-500/40' :
+              i < mediumLimit ? 'border-yellow-500/40' : 'border-red-500/40';
+            const difficultyBg = i < easyLimit ? 'bg-green-500/5' :
+              i < mediumLimit ? 'bg-yellow-500/5' : 'bg-red-500/5';
             return (
               <div
                 key={i}
