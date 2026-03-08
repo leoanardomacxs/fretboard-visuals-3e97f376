@@ -101,30 +101,33 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
     if (!currentProgression || isPlaying) return;
     setIsPlaying(true);
 
+    // Track the previous chord's root MIDI to ensure ascending voicing
+    let prevRootMidi = noteNameToMidi(root, 3); // key root as baseline
+
     for (let i = 0; i < currentProgression.chords.length; i++) {
       const chord = currentProgression.chords[i];
       setActiveChordIdx(i);
 
-      // Octave-aware voicing: chord roots that are chromatically below the key root
-      // in the same octave get bumped up to the next octave for ascending feel
-      let bassOctave = 3;
-      const keySemi = getNoteIndex(root);
-      const keyMidi = noteNameToMidi(root, 3);
-      const chordMidi = noteNameToMidi(chord.root, 3);
-      if (chordMidi < keyMidi) {
-        bassOctave = 4; // wrap to next octave so pitch ascends
+      // Place this chord's root relative to the key root in octave 3,
+      // ensuring it's always at or above the key root
+      const semi = noteNameToMidi(chord.root, 0) % 12;
+      const keyRootMidi = noteNameToMidi(root, 3);
+      let bassMidi = keyRootMidi - (keyRootMidi % 12) + semi;
+      // Ensure bass is at or above key root (within one octave above)
+      while (bassMidi < keyRootMidi) bassMidi += 12;
+      // But don't go too high (keep within 1 octave above key root)
+      while (bassMidi >= keyRootMidi + 12) bassMidi -= 12;
+
+      // Build voicing: root as bass, then stack other notes above
+      const voiced: number[] = [bassMidi];
+      for (let j = 1; j < chord.notes.length; j++) {
+        const noteSemi = noteNameToMidi(chord.notes[j], 0) % 12;
+        let noteMidi = bassMidi - (bassMidi % 12) + noteSemi;
+        while (noteMidi <= bassMidi) noteMidi += 12;
+        voiced.push(noteMidi);
       }
 
-      const bassNote = noteNameToMidi(chord.notes[0], bassOctave);
-      const midOctave = bassOctave + 1;
-      const midNotes = chord.notes.map(n => noteNameToMidi(n, midOctave));
-      
-      const voicedNotes = [bassNote, ...midNotes.map(m => {
-        while (m <= bassNote) m += 12;
-        return m;
-      })];
-      
-      const uniqueNotes = [...new Set(voicedNotes)].sort((a, b) => a - b);
+      const uniqueNotes = [...new Set(voiced)].sort((a, b) => a - b);
       playChord(uniqueNotes, 1.0);
 
       await new Promise(resolve => setTimeout(resolve, 1200));

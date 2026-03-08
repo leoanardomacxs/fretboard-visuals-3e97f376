@@ -185,48 +185,56 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
     return map[quality] || 'major';
   };
 
-  /** Play a chord with octave-aware voicing relative to the key root */
-  const playChordNotes = useCallback((notes: string[], keyRoot?: string, chordRoot?: string) => {
-    // Determine the base octave: if the chord root is above the key root chromatically, 
-    // keep octave 3 for bass; if it wraps around (e.g. F in key of C), bump up
-    let bassOctave = 3;
-    if (keyRoot && chordRoot) {
-      const keySemi = getNoteIndex(keyRoot);
-      const chordSemi = getNoteIndex(chordRoot);
-      const interval = ((chordSemi - keySemi) % 12 + 12) % 12;
-      // If the chord root is at or above the 5th degree (interval >= 7), 
-      // it's getting high — but still in same octave range.
-      // The key point: ensure ascending pitch. We add an octave bump 
-      // when the root note's MIDI in octave 3 would be LOWER than the key root in octave 3
-      const keyMidi = noteNameToMidi(keyRoot, 3);
-      const chordMidi = noteNameToMidi(chordRoot, 3);
-      if (chordMidi < keyMidi) {
-        bassOctave = 4; // wrap to next octave
-      }
+  /** Play a single chord with a specific bass MIDI as reference for voicing */
+  const playChordWithBass = useCallback((notes: string[], bassMidi: number) => {
+    // Place all chord notes starting from bassMidi upward
+    const rootMidi = bassMidi;
+    const voiced: number[] = [rootMidi];
+    for (let j = 1; j < notes.length; j++) {
+      let noteMidi = noteNameToMidi(notes[j], 0); // get raw semitone class
+      const semi = noteMidi % 12;
+      // Place this note just above the root
+      noteMidi = rootMidi - (rootMidi % 12) + semi;
+      while (noteMidi <= rootMidi) noteMidi += 12;
+      voiced.push(noteMidi);
     }
-
-    const bassNote = noteNameToMidi(notes[0], bassOctave);
-    const midOctave = bassOctave + 1;
-    const midNotes = notes.map(n => noteNameToMidi(n, midOctave));
-    const voicedNotes = [bassNote, ...midNotes.map(m => {
-      while (m <= bassNote) m += 12;
-      return m;
-    })];
-    const uniqueNotes = [...new Set(voicedNotes)].sort((a, b) => a - b);
+    const uniqueNotes = [...new Set(voiced)].sort((a, b) => a - b);
     playChord(uniqueNotes, 1.0);
   }, []);
 
+  /** Play a chord for individual clicks (non-sequential) */
+  const playChordNotes = useCallback((notes: string[], _keyRoot?: string, chordRoot?: string) => {
+    const bassMidi = noteNameToMidi(notes[0], 3);
+    playChordWithBass(notes, bassMidi);
+  }, [playChordWithBass]);
+
+  /** Play all chords sequentially with ascending pitch — each chord root is placed
+   *  just above the previous chord's root, creating a natural ascending harmonic field */
   const playAllChords = useCallback(async (chords: Array<{ notes: string[]; root: string }>) => {
     if (isPlaying) return;
     setIsPlaying(true);
+
+    // Start the first chord root at octave 3
+    let currentBassMidi = noteNameToMidi(chords[0].root, 3);
+
     for (let i = 0; i < chords.length; i++) {
       setActiveIdx(i);
-      playChordNotes(chords[i].notes, root, chords[i].root);
+
+      if (i > 0) {
+        // Place this chord's root just above the previous chord's root
+        const semi = noteNameToMidi(chords[i].root, 0) % 12;
+        let nextRoot = currentBassMidi - (currentBassMidi % 12) + semi;
+        while (nextRoot <= currentBassMidi) nextRoot += 12;
+        currentBassMidi = nextRoot;
+      }
+
+      playChordWithBass(chords[i].notes, currentBassMidi);
       await new Promise(r => setTimeout(r, 1200));
     }
+
     setIsPlaying(false);
     setActiveIdx(null);
-  }, [isPlaying, playChordNotes, root]);
+  }, [isPlaying, playChordWithBass]);
 
   const renderChordCard = (
     chord: { name: string; root: string; notes: string[]; quality?: string },
@@ -535,8 +543,15 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
                       <span className="text-sm font-bold text-foreground">ii-V-I → {ch.romanNumeral} ({ch.name})</span>
                       <button
                         onClick={async () => {
-                          for (const c of iiVI) {
-                            playChordNotes(c.notes, ch.root, c.root);
+                          let curBase = noteNameToMidi(iiVI[0].root, 3);
+                          for (let ci = 0; ci < iiVI.length; ci++) {
+                            if (ci > 0) {
+                              const s = noteNameToMidi(iiVI[ci].root, 0) % 12;
+                              let nx = curBase - (curBase % 12) + s;
+                              while (nx <= curBase) nx += 12;
+                              curBase = nx;
+                            }
+                            playChordWithBass(iiVI[ci].notes, curBase);
                             await new Promise(r => setTimeout(r, 1200));
                           }
                         }}
