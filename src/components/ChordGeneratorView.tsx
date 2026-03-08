@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import ChordDiagram from './ChordDiagram';
 import { generateChordVoicings, generateTriadInversions, getChordTypeCategories, CHORD_TYPES } from '@/lib/chordGenerator';
 import type { TriadVoicing } from '@/lib/chordGenerator';
 import { ALL_ROOTS } from '@/lib/musicTheory';
+import { ChevronDown } from 'lucide-react';
 
 interface ChordGeneratorViewProps {
   root: string;
@@ -11,12 +12,34 @@ interface ChordGeneratorViewProps {
 
 const TRIAD_TYPES = ['major', 'minor', 'dim', 'aug', 'sus2', 'sus4'];
 
+const TYPE_DISPLAY: Record<string, string> = {
+  'major': 'Maior', 'minor': 'Menor', 'dim': 'Dim', 'aug': 'Aum',
+  'sus2': 'sus2', 'sus4': 'sus4', '7': '7', 'maj7': 'maj7',
+  'min7': 'm7', 'min-maj7': 'm(maj7)', 'dim7': '°7', 'half-dim7': 'ø7',
+  'aug7': '+7', '7sus4': '7sus4', 'add9': 'add9', 'madd9': 'madd9',
+  '6': '6', 'm6': 'm6', '9': '9', 'maj9': 'maj9', 'm9': 'm9', '5': '5',
+};
+
 const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }) => {
   const [selectedType, setSelectedType] = useState('major');
+  const [rootOpen, setRootOpen] = useState(false);
+  const [typeOpen, setTypeOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const typeRef = useRef<HTMLDivElement>(null);
   const categories = useMemo(() => getChordTypeCategories(), []);
 
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setRootOpen(false);
+      if (typeRef.current && !typeRef.current.contains(e.target as Node)) setTypeOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   const voicings = useMemo(
-    () => generateChordVoicings(root, selectedType, 30),
+    () => generateChordVoicings(root, selectedType, 20),
     [root, selectedType]
   );
 
@@ -29,16 +52,13 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
   const chordName = `${root}${typeDef?.label || ''}`;
   const isTriadType = TRIAD_TYPES.includes(selectedType);
 
-  // Group triad inversions by string set, then by inversion
   const groupedTriads = useMemo(() => {
     if (!isTriadType || triadInversions.length === 0) return [];
-
     const byStringSet = new Map<string, TriadVoicing[]>();
     for (const t of triadInversions) {
       if (!byStringSet.has(t.stringSet)) byStringSet.set(t.stringSet, []);
       byStringSet.get(t.stringSet)!.push(t);
     }
-
     return Array.from(byStringSet.entries()).map(([stringSet, voicings]) => ({
       stringSet,
       voicings: voicings.sort((a, b) => {
@@ -61,85 +81,102 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
       <div>
         <h2 className="text-xl font-bold text-foreground">Gerador de Acordes</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Todas as digitações possíveis para {chordName}
+          Digitações mais comuns para <span className="font-semibold text-foreground">{chordName}</span>
         </p>
       </div>
 
-      {/* Root selector */}
-      <div className="space-y-2">
-        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nota Raiz</label>
-        <div className="flex flex-wrap gap-1.5">
-          {ALL_ROOTS.map(n => (
-            <button
-              key={n}
-              onClick={() => setRoot(n)}
-              className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                root === n
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-              }`}
-            >
-              {n}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Chord type selector */}
-      <div className="space-y-3">
-        {categories.map(cat => (
-          <div key={cat.category}>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 font-bold">
-              {cat.category}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {cat.types.map(t => {
-                const displayLabel = t.label === '' ? 'Maior' :
-                  t.key === 'minor' ? 'Menor' :
-                  t.key === 'dim' ? 'Dim' :
-                  t.key === 'aug' ? 'Aum' :
-                  t.label;
-                return (
-                  <button
-                    key={t.key}
-                    onClick={() => setSelectedType(t.key)}
-                    className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-                      selectedType === t.key
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                    }`}
-                  >
-                    {displayLabel}
-                  </button>
-                );
-              })}
+      {/* Selectors row */}
+      <div className="flex flex-wrap gap-3">
+        {/* Root dropdown */}
+        <div ref={rootRef} className="relative">
+          <button
+            onClick={() => { setRootOpen(!rootOpen); setTypeOpen(false); }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card text-sm font-semibold text-foreground hover:bg-secondary/60 transition-colors min-w-[100px]"
+          >
+            <span className="text-muted-foreground text-xs">Nota:</span>
+            <span>{root}</span>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${rootOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {rootOpen && (
+            <div className="absolute top-full left-0 mt-1.5 z-50 bg-card border border-border rounded-lg shadow-lg p-2 grid grid-cols-4 gap-1 min-w-[180px] note-appear">
+              {ALL_ROOTS.map(n => (
+                <button
+                  key={n}
+                  onClick={() => { setRoot(n); setRootOpen(false); }}
+                  className={`px-3 py-2 rounded-md text-xs font-semibold transition-all ${
+                    root === n
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-foreground hover:bg-secondary'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
             </div>
-          </div>
-        ))}
+          )}
+        </div>
+
+        {/* Type dropdown */}
+        <div ref={typeRef} className="relative">
+          <button
+            onClick={() => { setTypeOpen(!typeOpen); setRootOpen(false); }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card text-sm font-semibold text-foreground hover:bg-secondary/60 transition-colors min-w-[140px]"
+          >
+            <span className="text-muted-foreground text-xs">Tipo:</span>
+            <span>{TYPE_DISPLAY[selectedType] || selectedType}</span>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${typeOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {typeOpen && (
+            <div className="absolute top-full left-0 mt-1.5 z-50 bg-card border border-border rounded-lg shadow-lg p-3 min-w-[240px] max-h-[360px] overflow-y-auto space-y-3 note-appear">
+              {categories.map(cat => (
+                <div key={cat.category}>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 font-bold">
+                    {cat.category}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {cat.types.map(t => (
+                      <button
+                        key={t.key}
+                        onClick={() => { setSelectedType(t.key); setTypeOpen(false); }}
+                        className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                          selectedType === t.key
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-foreground hover:bg-secondary'
+                        }`}
+                      >
+                        {TYPE_DISPLAY[t.key] || t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Results count */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold text-foreground">{chordName}</span>
-        <span className="text-xs text-muted-foreground">
-          — {voicings.length} digitação{voicings.length !== 1 ? 'ões' : ''} encontrada{voicings.length !== 1 ? 's' : ''}
-        </span>
-      </div>
-
-      {/* Difficulty indicator */}
-      {voicings.length > 0 && (
-        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-500" /> Fácil
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-yellow-500" /> Médio
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-red-500" /> Difícil
+      {/* Results count + difficulty legend */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-foreground">{chordName}</span>
+          <span className="text-xs text-muted-foreground">
+            — {voicings.length} digitação{voicings.length !== 1 ? 'ões' : ''} 
           </span>
         </div>
-      )}
+        {voicings.length > 0 && (
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-500" /> Fácil
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-yellow-500" /> Médio
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-red-500" /> Difícil
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Voicing cards grid */}
       {voicings.length > 0 ? (

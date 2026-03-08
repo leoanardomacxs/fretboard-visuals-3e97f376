@@ -317,7 +317,8 @@ function validateAndScore(
   const voicing = [...frets] as (number | null)[];
 
   const sounding = voicing.filter(f => f !== null);
-  const minSounding = requiredTones <= 2 ? 2 : 3;
+  // Prefer fuller chords: at least 4 sounding strings for standard chords, 2 for power
+  const minSounding = requiredTones <= 2 ? 2 : Math.min(requiredTones + 1, 4);
   if (sounding.length < minSounding) return null;
 
   const presentPCs = new Set<number>();
@@ -331,6 +332,13 @@ function validateAndScore(
   }
 
   if (!presentPCs.has(rootIdx)) return null;
+
+  // Root should be in the bass (lowest sounding string) for common voicings — bonus if true
+  let lowestSoundingString = -1;
+  for (let s = 0; s < 6; s++) {
+    if (voicing[s] !== null) { lowestSoundingString = s; break; }
+  }
+  const rootInBass = lowestSoundingString >= 0 && ((OPEN_STRINGS[lowestSoundingString] + voicing[lowestSoundingString]!) % 12) === rootIdx;
 
   // No muted strings between sounding strings
   let firstSounding = -1, lastSounding = -1;
@@ -350,46 +358,38 @@ function validateAndScore(
     minFret = Math.min(...fretted);
     maxFret = Math.max(...fretted);
     span = maxFret - minFret;
-    if (span > 4) return null;
+    if (span > 3) return null; // Stricter: max 3-fret span for comfort
   }
 
   const { fingers, barre, fingerCount } = assignFingers(voicing, fretted, minFret);
   if (fingerCount > 4) return null;
   if (!fingers) return null;
 
-  // Comfort penalties
   const mutedCount = voicing.filter(f => f === null).length;
   const soundingCount = 6 - mutedCount;
-  
-  // Big stretches at low frets are harder
-  const stretchPenalty = span > 3 ? span * 15 : span * 8;
-  
-  // Barre chords are harder, especially wide barres
-  const barrePenalty = barre ? (barre.toString - barre.fromString) * 4 + 8 : 0;
-  
-  // Higher positions are less common/comfortable
-  const positionPenalty = minFret > 7 ? (minFret - 7) * 5 : minFret > 0 ? minFret : 0;
-  
-  // More muted strings = less desirable
-  const mutedPenalty = mutedCount * 10;
-  
-  // Fewer sounding strings = less full sound
-  const fullnessPenalty = (6 - soundingCount) * 6;
 
-  // Awkward finger configurations penalty
+  // Reject chords with too many muted strings (3+ muted = unusual)
+  if (mutedCount >= 3 && requiredTones > 2) return null;
+
+  const stretchPenalty = span * 12;
+  const barrePenalty = barre ? (barre.toString - barre.fromString) * 3 + 6 : 0;
+  const positionPenalty = minFret > 7 ? (minFret - 7) * 6 : minFret > 0 ? minFret : 0;
+  const mutedPenalty = mutedCount * 12;
+  const fullnessBonus = soundingCount >= 5 ? -10 : soundingCount >= 4 ? -5 : 0;
+  const rootBassBonus = rootInBass ? -15 : 10;
+
+  // Awkward finger configurations
   let awkwardPenalty = 0;
-  // Check for fingers that skip strings
   const fingerPositions: { s: number; f: number }[] = [];
   for (let s = 0; s < 6; s++) {
     if (voicing[s] !== null && voicing[s]! > 0) {
       fingerPositions.push({ s, f: voicing[s]! });
     }
   }
-  // Penalize when high fret is on a lower string (requires awkward hand position)
   for (let i = 0; i < fingerPositions.length - 1; i++) {
     for (let j = i + 1; j < fingerPositions.length; j++) {
       if (fingerPositions[i].s < fingerPositions[j].s && fingerPositions[i].f > fingerPositions[j].f + 2) {
-        awkwardPenalty += 10;
+        awkwardPenalty += 15;
       }
     }
   }
@@ -397,14 +397,15 @@ function validateAndScore(
   const score =
     stretchPenalty +
     mutedPenalty +
-    fullnessPenalty +
+    fullnessBonus +
     positionPenalty +
     fingerCount * 3 +
     barrePenalty +
-    awkwardPenalty;
+    awkwardPenalty +
+    rootBassBonus;
 
-  // Filter out very uncomfortable voicings
-  if (score > 120) return null;
+  // Filter out uncomfortable voicings
+  if (score > 90) return null;
 
   return {
     root,
