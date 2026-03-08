@@ -451,7 +451,6 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
             </p>
             <div className="space-y-3">
               {triadField.map((ch, i) => {
-                if (i === 0) return null; // skip I (V7/I is just the regular V7)
                 const secDom = getSecondaryDominant(ch.root);
                 const voicing = getVoicing(secDom.root, '7');
                 return (
