@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import ChordDiagram from './ChordDiagram';
 import { generateChordVoicings, generateTriadInversions, getChordTypeCategories, CHORD_TYPES } from '@/lib/chordGenerator';
-import type { TriadVoicing } from '@/lib/chordGenerator';
+import type { TriadVoicing, ChordVoicing } from '@/lib/chordGenerator';
 import { ALL_ROOTS, NOTES } from '@/lib/musicTheory';
 import { ChevronDown } from 'lucide-react';
 
@@ -25,6 +25,7 @@ const TYPE_DISPLAY: Record<string, string> = {
   'dim7': '°7', 'half-dim7': 'ø7', 'aug7': '+7', '7sus4': '7sus4',
   'add9': 'Add9', 'madd9': 'mAdd9', '6': '6', 'm6': 'm6',
   '9': '9', 'maj9': 'Maj9', 'm9': 'm9',
+  'all': 'Todos',
 };
 
 const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }) => {
@@ -46,19 +47,27 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const voicings = useMemo(
-    () => generateChordVoicings(root, selectedType, 20),
-    [root, selectedType]
-  );
+  const voicings = useMemo(() => {
+    if (selectedType === 'all') {
+      const allVoicings: (ChordVoicing & { displayType?: string })[] = [];
+      for (const [key, def] of Object.entries(CHORD_TYPES)) {
+        const v = generateChordVoicings(root, key, 3);
+        v.forEach(voicing => allVoicings.push({ ...voicing, typeLabel: def.label || key }));
+      }
+      allVoicings.sort((a, b) => a.score - b.score);
+      return allVoicings;
+    }
+    return generateChordVoicings(root, selectedType, 20);
+  }, [root, selectedType]);
 
   const triadInversions = useMemo(
     () => generateTriadInversions(root, selectedType),
     [root, selectedType]
   );
 
-  const typeDef = CHORD_TYPES[selectedType];
-  const chordName = `${root}${typeDef?.label || ''}`;
-  const isTriadType = TRIAD_TYPES.includes(selectedType);
+  const typeDef = selectedType === 'all' ? null : CHORD_TYPES[selectedType];
+  const chordName = selectedType === 'all' ? `${root} — Todos` : `${root}${typeDef?.label || ''}`;
+  const isTriadType = selectedType !== 'all' && TRIAD_TYPES.includes(selectedType);
 
   // Compute chord notes and interval names
   const chordFormula = useMemo(() => {
@@ -171,6 +180,19 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
                   </div>
                 </div>
               ))}
+              {/* Show all option */}
+              <div className="border-t border-border pt-2 mt-2">
+                <button
+                  onClick={() => { setSelectedType('all'); setTypeOpen(false); }}
+                  className={`w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    selectedType === 'all'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-foreground hover:bg-secondary'
+                  }`}
+                >
+                  🎵 Mostrar todos
+                </button>
+              </div>
             </div>
           )}
         </div>
