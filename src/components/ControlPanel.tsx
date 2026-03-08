@@ -244,6 +244,112 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   );
 };
 
+function AudioSettingsPanel() {
+  const [audio, setAudio] = useState<AudioSettings>(getAudioSettings());
+
+  useEffect(() => {
+    return subscribeAudioSettings(setAudio);
+  }, []);
+
+  const set = (partial: Partial<AudioSettings>) => updateAudioSettings(partial);
+
+  return (
+    <div className="space-y-3">
+      {/* Volume + Mute */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Volume</span>
+          <button
+            onClick={() => set({ muted: !audio.muted })}
+            className={`text-xs px-2 py-0.5 rounded transition-all font-semibold ${
+              audio.muted
+                ? 'bg-destructive/20 text-destructive'
+                : 'bg-primary/10 text-primary'
+            }`}
+          >
+            {audio.muted ? '🔇 Mudo' : '🔊 On'}
+          </button>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={Math.round(audio.volume * 100)}
+          onChange={e => set({ volume: Number(e.target.value) / 100 })}
+          className="w-full accent-primary"
+          disabled={audio.muted}
+        />
+        <div className="flex justify-between text-[9px] text-muted-foreground">
+          <span>0%</span>
+          <span className="font-semibold text-foreground">{Math.round(audio.volume * 100)}%</span>
+          <span>100%</span>
+        </div>
+      </div>
+
+      {/* Timbre */}
+      <div className="space-y-1.5">
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Timbre</span>
+        <div className="grid grid-cols-2 gap-1">
+          {TIMBRE_LIST.map(t => (
+            <button
+              key={t.key}
+              onClick={() => { set({ timbre: t.key }); playClick(600); }}
+              className={`text-left px-2 py-1.5 rounded text-[11px] transition-all flex items-center gap-1.5 ${
+                audio.timbre === t.key
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-foreground hover:bg-secondary'
+              }`}
+            >
+              <span>{t.icon}</span>
+              <span className="truncate">{t.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Brightness */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Brilho</span>
+          <span className="text-[9px] text-foreground font-semibold">{Math.round(audio.brightness * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={Math.round(audio.brightness * 100)}
+          onChange={e => set({ brightness: Number(e.target.value) / 100 })}
+          className="w-full accent-primary"
+        />
+        <div className="flex justify-between text-[9px] text-muted-foreground">
+          <span>Suave</span>
+          <span>Brilhante</span>
+        </div>
+      </div>
+
+      {/* Reverb */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Reverb</span>
+          <span className="text-[9px] text-foreground font-semibold">{Math.round(audio.reverb * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={Math.round(audio.reverb * 100)}
+          onChange={e => set({ reverb: Number(e.target.value) / 100 })}
+          className="w-full accent-primary"
+        />
+        <div className="flex justify-between text-[9px] text-muted-foreground">
+          <span>Seco</span>
+          <span>Ambiente</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Section({ title, children, collapsible = false, defaultOpen = true }: { title: string; children: React.ReactNode; collapsible?: boolean; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
 
