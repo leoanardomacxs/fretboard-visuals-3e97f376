@@ -226,7 +226,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   key={s}
                   onClick={() => {
                     setScaleType(s);
-                    if (viewMode === 'chord-generator') setViewMode('full');
+                    if (viewMode === 'chord-generator' || viewMode === 'progressions') setViewMode('full');
                     const formula = SCALE_FORMULAS[s];
                     if (formula) {
                       playScale(getScaleMidiNotes(root, formula), 0.2, 0.4);
