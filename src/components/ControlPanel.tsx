@@ -214,6 +214,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         ))}
       </Section>
 
+      {/* Áudio */}
+      <Section title="Áudio" collapsible defaultOpen={false}>
+        <AudioSettingsPanel />
+      </Section>
+
       {/* Tamanho */}
       <Section title="Tamanho das Notas">
         <input
