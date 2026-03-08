@@ -328,8 +328,9 @@ function validateAndScore(
   const voicing = [...frets] as (number | null)[];
 
   const sounding = voicing.filter(f => f !== null);
-  // Prefer fuller chords: at least 4 sounding strings for standard chords, 2 for power
-  const minSounding = requiredTones <= 2 ? 2 : Math.min(requiredTones + 1, 4);
+  // Prefer fuller chords: at least 3 sounding strings for extended chords, 4 for standard, 2 for power
+  const isExtended = requiredTones >= 5;
+  const minSounding = requiredTones <= 2 ? 2 : isExtended ? 3 : Math.min(requiredTones + 1, 4);
   if (sounding.length < minSounding) return null;
 
   const presentPCs = new Set<number>();
@@ -338,8 +339,18 @@ function validateAndScore(
       presentPCs.add((OPEN_STRINGS[s] + voicing[s]!) % 12);
     }
   }
-  for (const pc of chordPitchClasses) {
-    if (!presentPCs.has(pc)) return null;
+  // For extended chords (5+ notes), allow omitting the 5th (interval 7)
+  if (isExtended) {
+    const rootPitch = rootIdx;
+    const fifthPitch = (rootIdx + 7) % 12;
+    for (const pc of chordPitchClasses) {
+      if (pc === fifthPitch && !presentPCs.has(pc)) continue; // allow missing 5th
+      if (!presentPCs.has(pc)) return null;
+    }
+  } else {
+    for (const pc of chordPitchClasses) {
+      if (!presentPCs.has(pc)) return null;
+    }
   }
 
   if (!presentPCs.has(rootIdx)) return null;
@@ -369,7 +380,7 @@ function validateAndScore(
     minFret = Math.min(...fretted);
     maxFret = Math.max(...fretted);
     span = maxFret - minFret;
-    if (span > 3) return null; // Stricter: max 3-fret span for comfort
+    if (span > 4) return null; // Allow up to 4-fret span (standard for tetrads/extensions)
   }
 
   const { fingers, barre, fingerCount } = assignFingers(voicing, fretted, minFret);
@@ -379,13 +390,14 @@ function validateAndScore(
   const mutedCount = voicing.filter(f => f === null).length;
   const soundingCount = 6 - mutedCount;
 
-  // Reject chords with too many muted strings (3+ muted = unusual)
-  if (mutedCount >= 3 && requiredTones > 2) return null;
+  // Reject chords with too many muted strings
+  const maxMuted = isExtended ? 3 : 2;
+  if (mutedCount > maxMuted && requiredTones > 2) return null;
 
   // --- Improved scoring ---
 
   // Stretch: bigger span between fingers = harder
-  const stretchPenalty = span <= 1 ? 0 : span === 2 ? 8 : span === 3 ? 22 : 40;
+  const stretchPenalty = span <= 1 ? 0 : span === 2 ? 6 : span === 3 ? 16 : span === 4 ? 30 : 50;
 
   // Barre chords are harder
   const barreWidth = barre ? (barre.toString - barre.fromString + 1) : 0;
@@ -457,7 +469,7 @@ function validateAndScore(
     openBonus;
 
   // Filter out uncomfortable voicings
-  if (score > 90) return null;
+  if (score > 110) return null;
 
   return {
     root,
@@ -548,7 +560,7 @@ function deduplicateVoicings(voicings: ChordVoicing[]): ChordVoicing[] {
   for (const v of exactDeduped) {
     let isTooSimilar = false;
     for (const kept of result) {
-      if (areSimilar(v.frets, kept.frets, 0.8)) {
+      if (areSimilar(v.frets, kept.frets, 0.7)) {
         isTooSimilar = true;
         break;
       }

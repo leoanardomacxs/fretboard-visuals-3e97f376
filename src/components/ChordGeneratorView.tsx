@@ -61,13 +61,13 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
     }
     // For maj9, also include no5 voicings
     if (selectedType === 'maj9') {
-      const full = generateChordVoicings(root, 'maj9', 15);
-      const no5 = generateChordVoicings(root, 'maj9no5', 15);
+      const full = generateChordVoicings(root, 'maj9', 25);
+      const no5 = generateChordVoicings(root, 'maj9no5', 25);
       const combined = [...full, ...no5];
       combined.sort((a, b) => a.score - b.score);
-      return combined.slice(0, 30);
+      return combined.slice(0, 40);
     }
-    return generateChordVoicings(root, selectedType, 20);
+    return generateChordVoicings(root, selectedType, 40);
   }, [root, selectedType]);
 
   const triadInversions = useMemo(
