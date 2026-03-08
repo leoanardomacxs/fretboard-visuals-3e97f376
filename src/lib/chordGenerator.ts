@@ -101,8 +101,8 @@ export function generateChordVoicings(root: string, chordType: string, maxResult
   // Deduplicate with similarity check (80%+ similar = keep only best)
   const deduped = deduplicateVoicings(voicings);
 
-  // Sort by score (easy → hard)
-  deduped.sort((a, b) => a.score - b.score);
+  // Sort by position (closest to nut first), then by score as tiebreaker
+  deduped.sort((a, b) => a.startFret - b.startFret || a.score - b.score);
 
   return deduped.slice(0, maxResults);
 }
