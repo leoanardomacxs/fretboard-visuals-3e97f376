@@ -318,13 +318,29 @@ export function noteNameToMidi(name: string, octave = 4): number {
   return 12 * (octave + 1) + semi;
 }
 
+// ─── Distortion ───
+function createDistortion(ctx: AudioContext, amount: number): WaveShaperNode {
+  const shaper = ctx.createWaveShaper();
+  const k = amount * 400;
+  const samples = 44100;
+  const curve = new Float32Array(samples);
+  for (let i = 0; i < samples; i++) {
+    const x = (i * 2) / samples - 1;
+    curve[i] = ((3 + k) * x * 20 * (Math.PI / 180)) / (Math.PI + k * Math.abs(x));
+  }
+  shaper.curve = curve;
+  shaper.oversample = '4x';
+  return shaper;
+}
+
 // ─── Play Functions ───
 
 export function playNote(midi: number, duration = 0.8, volume = 0.3, startTime?: number): void {
   if (settings.muted) return;
   const ctx = getAudioContext();
   const t = startTime ?? ctx.currentTime;
-  const freq = midiToFreq(midi);
+  const adjustedMidi = midi + (settings.octave * 12);
+  const freq = midiToFreq(adjustedMidi);
   const timbreDef = getTimbreDef(settings.timbre, settings.brightness);
   const vol = volume * settings.volume;
 
@@ -334,10 +350,36 @@ export function playNote(midi: number, duration = 0.8, volume = 0.3, startTime?:
   noteGain.gain.linearRampToValueAtTime(vol, t + timbreDef.attackTime);
   noteGain.gain.exponentialRampToValueAtTime(Math.max(timbreDef.sustainLevel * vol, 0.0001), t + duration);
   
+  // Build effect chain: noteGain → [distortion] → output
+  let outputChain: AudioNode = noteGain;
+
+  // Distortion
+  if (settings.distortion > 0.01) {
+    const dist = createDistortion(ctx, settings.distortion);
+    noteGain.connect(dist);
+    outputChain = dist;
+  }
+
   // Connect to dry + reverb
-  noteGain.connect(getOutputNode());
+  outputChain.connect(getOutputNode());
   if (settings.reverb > 0.01) {
-    noteGain.connect(getReverbInput());
+    outputChain.connect(getReverbInput());
+  }
+
+  // Delay effect
+  if (settings.delay > 0.01) {
+    const delayNode = ctx.createDelay(2.0);
+    delayNode.delayTime.setValueAtTime(settings.delayTime, t);
+    const feedbackGain = ctx.createGain();
+    feedbackGain.gain.setValueAtTime(settings.delayFeedback, t);
+    const delayVol = ctx.createGain();
+    delayVol.gain.setValueAtTime(settings.delay * 0.6, t);
+    
+    outputChain.connect(delayNode);
+    delayNode.connect(feedbackGain);
+    feedbackGain.connect(delayNode);
+    delayNode.connect(delayVol);
+    delayVol.connect(getOutputNode());
   }
 
   // Create oscillators based on timbre
@@ -345,7 +387,21 @@ export function playNote(midi: number, duration = 0.8, volume = 0.3, startTime?:
   for (let i = 0; i < oscCount; i++) {
     const osc = ctx.createOscillator();
     osc.type = timbreDef.oscTypes[i];
-    osc.frequency.setValueAtTime(freq * timbreDef.harmonicMultipliers[i], t);
+    const baseFreq = freq * timbreDef.harmonicMultipliers[i];
+    osc.frequency.setValueAtTime(baseFreq, t);
+
+    // Vibrato
+    if (settings.vibrato > 0.01) {
+      const lfo = ctx.createOscillator();
+      lfo.type = 'sine';
+      lfo.frequency.setValueAtTime(settings.vibratoSpeed, t);
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.setValueAtTime(baseFreq * settings.vibrato * 0.02, t);
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.frequency);
+      lfo.start(t);
+      lfo.stop(t + duration + 0.5);
+    }
 
     const g = ctx.createGain();
     const harmGain = timbreDef.harmonicGains[i];
