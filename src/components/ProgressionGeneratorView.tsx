@@ -368,7 +368,7 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
       {/* Preset progressions */}
       <div className="space-y-3 pt-4 border-t border-border">
         <h3 className="text-sm font-bold text-foreground">Progressões Clássicas</h3>
-        <p className="text-xs text-muted-foreground">Clique para carregar uma progressão famosa</p>
+        <p className="text-xs text-muted-foreground">Clique para carregar. São sequências usadas em milhares de músicas famosas.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {PRESET_PROGRESSIONS.map((preset, i) => {
             const chordNames = preset.degrees.map(d => harmonicField[d - 1].name).join(' → ');

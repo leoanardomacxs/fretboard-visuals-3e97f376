@@ -409,18 +409,19 @@ const Index: React.FC = () => {
       />
       <main ref={mainRef} className="flex-1 overflow-y-auto p-6 scrollbar-thin">
         {/* Export buttons */}
-        <div className="flex gap-2 mb-4 justify-end">
+        <div className="flex items-center gap-2 mb-4 justify-end">
+          <span className="text-[9px] text-muted-foreground/60 italic mr-auto">Clique nas notas no braço para ouvir. Use os controles na barra lateral para explorar escalas, acordes e mais.</span>
           <button
             onClick={() => handleExport('svg')}
             className="px-3 py-1.5 text-xs font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
           >
-            📥 Exportar SVG
+            📥 SVG
           </button>
           <button
             onClick={() => handleExport('png')}
             className="px-3 py-1.5 text-xs font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
           >
-            📥 Exportar PNG
+            📥 PNG
           </button>
         </div>
         {renderMainView()}
