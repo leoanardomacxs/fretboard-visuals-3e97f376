@@ -173,7 +173,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   : 'text-foreground hover:bg-secondary'
               }`}
             >
-              <span>{m.icon}</span>
               {m.label}
             </button>
           ))}
