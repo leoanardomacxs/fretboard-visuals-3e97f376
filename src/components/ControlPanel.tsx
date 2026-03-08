@@ -47,7 +47,6 @@ const VIEW_MODES: { value: ViewMode; label: string; icon: string }[] = [
   { value: 'harmonic-matrix', label: 'Matriz Harmônica', icon: '📊' },
   { value: 'compare-pentatonics', label: 'Comparar Pentatônicas', icon: '🔄' },
   { value: 'improvisation', label: 'Improvisação', icon: '🎤' },
-  { value: 'chord-generator', label: 'Gerador de Acordes', icon: '🎹' },
 ];
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -92,6 +91,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           ))}
         </div>
       </Section>
+
+      {/* Gerador de Acordes — botão exclusivo */}
+      <button
+        onClick={() => setViewMode('chord-generator')}
+        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+          viewMode === 'chord-generator'
+            ? 'bg-primary text-primary-foreground shadow-md'
+            : 'bg-secondary text-foreground hover:bg-secondary/80'
+        }`}
+      >
+        <span>🎹</span>
+        Gerador de Acordes
+      </button>
 
       {/* Escala */}
       <Section title="Escala" collapsible defaultOpen={false}>
