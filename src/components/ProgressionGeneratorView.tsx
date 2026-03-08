@@ -219,19 +219,23 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
       {/* Current progression display */}
       {currentProgression && (
         <div className="space-y-4 note-appear">
+          {/* Progression title */}
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-bold text-foreground">
-              {currentProgression.degrees.map(d => harmonicField[d - 1].romanNumeral).join(' → ')}
+              {displayMode === 'hidden'
+                ? currentProgression.degrees.map(() => '?').join(' → ')
+                : currentProgression.degrees.map(d => harmonicField[d - 1].romanNumeral).join(' → ')}
             </h3>
           </div>
 
+          {/* Chord names row */}
           <div className="flex items-center gap-2 flex-wrap">
             {currentProgression.chords.map((ch, i) => (
               <React.Fragment key={i}>
                 <span className={`text-lg font-bold transition-all duration-300 ${
                   activeChordIdx === i ? 'text-primary scale-125' : 'text-foreground'
                 }`}>
-                  {ch.name}
+                  {displayMode === 'full' ? ch.name : displayMode === 'degrees' ? harmonicField[currentProgression.degrees[i] - 1].romanNumeral : '?'}
                 </span>
                 {i < currentProgression.chords.length - 1 && (
                   <span className="text-muted-foreground">→</span>
@@ -239,6 +243,13 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
               </React.Fragment>
             ))}
           </div>
+
+          {/* Ear training hint */}
+          {displayMode !== 'full' && (
+            <p className="text-xs text-muted-foreground italic">
+              🎧 {displayMode === 'degrees' ? 'Nomes dos acordes ocultos — ouça e tente identificar!' : 'Tudo oculto — treine seu ouvido!'}
+            </p>
+          )}
 
           {/* Chord diagrams */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
@@ -255,14 +266,40 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
                     if (voicing) playChordFromFrets(voicing.frets);
                   }}
                 >
+                  {/* Labels based on display mode */}
                   <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-[10px] font-mono text-muted-foreground">{ch.romanNumeral}</span>
-                    <span className="text-xs font-bold text-foreground">{ch.name}</span>
+                    {displayMode === 'full' && (
+                      <>
+                        <span className="text-[10px] font-mono text-muted-foreground">{ch.romanNumeral}</span>
+                        <span className="text-xs font-bold text-foreground">{ch.name}</span>
+                      </>
+                    )}
+                    {displayMode === 'degrees' && (
+                      <span className="text-xs font-bold text-foreground">{ch.romanNumeral}</span>
+                    )}
+                    {displayMode === 'hidden' && (
+                      <span className="text-xs font-bold text-muted-foreground">?</span>
+                    )}
                   </div>
-                  {voicing && <ChordDiagram voicing={voicing} width={130} />}
-                  <span className="text-[9px] text-muted-foreground mt-1">
-                    {ch.quality === 'Major' ? 'Maior' : ch.quality === 'minor' ? 'Menor' : 'Dim'}
-                  </span>
+
+                  {/* Diagram: show in full, blur in degrees, hide in hidden */}
+                  {voicing && displayMode === 'full' && <ChordDiagram voicing={voicing} width={130} />}
+                  {voicing && displayMode === 'degrees' && (
+                    <div className="blur-md select-none pointer-events-none">
+                      <ChordDiagram voicing={voicing} width={130} />
+                    </div>
+                  )}
+                  {displayMode === 'hidden' && (
+                    <div className="w-[130px] h-[180px] flex items-center justify-center">
+                      <span className="text-3xl opacity-30">👂</span>
+                    </div>
+                  )}
+
+                  {displayMode === 'full' && (
+                    <span className="text-[9px] text-muted-foreground mt-1">
+                      {ch.quality === 'Major' ? 'Maior' : ch.quality === 'minor' ? 'Menor' : 'Dim'}
+                    </span>
+                  )}
                 </div>
               );
             })}
