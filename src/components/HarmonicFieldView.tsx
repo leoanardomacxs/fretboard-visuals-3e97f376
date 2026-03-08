@@ -536,7 +536,7 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
                       <button
                         onClick={async () => {
                           for (const c of iiVI) {
-                            playChordNotes(c.notes);
+                            playChordNotes(c.notes, ch.root, c.root);
                             await new Promise(r => setTimeout(r, 1200));
                           }
                         }}
