@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ChordVoicing } from '@/lib/chordGenerator';
-import { NOTES } from '@/lib/musicTheory';
+import { useFlats, getNoteName as getMusicNoteName } from '@/lib/musicTheory';
 
 const OPEN_STRINGS_SEMI = [4, 9, 2, 7, 11, 4]; // E A D G B E in semitones from C
 
@@ -33,9 +33,10 @@ const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160, showN
     return topY + relative * fretSpacing + fretSpacing / 2;
   };
 
-  const getNoteName = (stringIdx: number, fret: number): string => {
+  const flats = useFlats(voicing.root);
+  const getChordNoteName = (stringIdx: number, fret: number): string => {
     const semitone = (OPEN_STRINGS_SEMI[stringIdx] + fret) % 12;
-    return NOTES[semitone];
+    return getMusicNoteName(semitone, flats);
   };
 
   return (
