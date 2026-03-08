@@ -329,7 +329,7 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
                       </>
                     )}
                     {displayMode === 'degrees' && (
-                      <span className="text-xs font-bold text-foreground">{ch.romanNumeral}</span>
+                      <span className="text-lg font-bold text-foreground">{ch.romanNumeral}</span>
                     )}
                     {displayMode === 'hidden' && (
                       <span className="text-xs font-bold text-muted-foreground">?</span>
@@ -338,9 +338,9 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
 
                   {/* Diagram: show in full, blur in degrees, hide in hidden */}
                   {voicing && displayMode === 'full' && <ChordDiagram voicing={voicing} width={130} />}
-                  {voicing && displayMode === 'degrees' && (
-                    <div className="blur-md select-none pointer-events-none">
-                      <ChordDiagram voicing={voicing} width={130} />
+                  {displayMode === 'degrees' && (
+                    <div className="w-[130px] h-[140px] flex items-center justify-center">
+                      <span className="text-4xl font-black text-foreground/80">{ch.romanNumeral}</span>
                     </div>
                   )}
                   {displayMode === 'hidden' && (
