@@ -31,6 +31,7 @@ export const CHORD_TYPES: Record<string, { intervals: number[]; label: string; c
   'm6':          { intervals: [0, 3, 7, 9],    label: 'm6',    category: 'Extensões' },
   '9':           { intervals: [0, 4, 7, 10, 14], label: '9',   category: 'Extensões' },
   'maj9':        { intervals: [0, 4, 7, 11, 14], label: 'maj9', category: 'Extensões' },
+  'maj9no5':     { intervals: [0, 4, 11, 14],    label: 'maj9(no5)', category: 'Extensões' },
   'm9':          { intervals: [0, 3, 7, 10, 14], label: 'm9',  category: 'Extensões' },
 };
 
