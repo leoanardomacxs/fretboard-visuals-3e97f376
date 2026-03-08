@@ -167,6 +167,18 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
 
       {/* Controls */}
       <div className="flex flex-wrap gap-3 items-center">
+        {/* Key scope toggle */}
+        <button
+          onClick={() => { setAllKeys(!allKeys); playClick(550); }}
+          className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all border ${
+            allKeys
+              ? 'border-primary bg-primary/10 text-primary'
+              : 'border-border bg-secondary text-foreground'
+          }`}
+        >
+          {allKeys ? '🌍 Todos os Tons' : `🎵 Tom de ${root}`}
+        </button>
+
         <button
           onClick={generateNew}
           className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm shadow-md hover:shadow-lg transition-all hover:scale-[1.02] active:scale-95"
