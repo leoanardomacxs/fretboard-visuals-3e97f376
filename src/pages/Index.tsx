@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import GuitarFretboard from '@/components/GuitarFretboard';
 import ControlPanel, { type ViewMode } from '@/components/ControlPanel';
+import ChordGeneratorView from '@/components/ChordGeneratorView';
 import {
   getScale,
   getHarmonicField,
@@ -113,6 +114,9 @@ const Index: React.FC = () => {
 
       case 'improvisation':
         return renderImprovisationView();
+
+      case 'chord-generator':
+        return <ChordGeneratorView root={root} setRoot={setRoot} />;
 
       default:
         return (
