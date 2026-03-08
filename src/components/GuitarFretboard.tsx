@@ -62,6 +62,7 @@ const GuitarFretboard: React.FC<GuitarFretboardProps> = ({
   subtitle,
   noteRadius = 14,
   allowVertical = true,
+  colorVariant = 0,
 }) => {
   const [vertical, setVertical] = useState(false);
   const fretCount = maxFret - startFret;
@@ -76,13 +77,22 @@ const GuitarFretboard: React.FC<GuitarFretboardProps> = ({
     return map;
   }, [notes, startFret, maxFret]);
 
+  const noteColorMap = useMemo(() => NOTE_PALETTES[colorVariant] || NOTE_PALETTES[0], [colorVariant]);
+  const funcPalette = useMemo(() => FUNCTION_PALETTES[colorVariant] || FUNCTION_PALETTES[0], [colorVariant]);
+
   const getNoteColor = (note: FretNote): string => {
-    if (colorMode === 'note') return NOTE_COLORS[note.note] || DEFAULT_NOTE_COLOR;
+    if (colorMode === 'note') return noteColorMap[note.note] || DEFAULT_NOTE_COLOR;
     if (colorMode === 'degree' && note.degree && note.degree > 0) {
+      // Degree colors come from CSS vars (set dynamically by Index.tsx)
       if (note.isRoot) return getDegreeHSL(1);
       return getDegreeHSL(note.degree);
     }
-    if (note.isRoot) return ROOT_NOTE_COLOR;
+    if (colorMode === 'function') {
+      if (note.isRoot) return funcPalette.root;
+      if (note.isChordTone) return funcPalette.chord;
+      return funcPalette.default;
+    }
+    if (note.isRoot) return funcPalette.root;
     if (note.isChordTone) return getDegreeHSL(5);
     return DEFAULT_NOTE_COLOR;
   };
