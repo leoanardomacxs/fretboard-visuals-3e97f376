@@ -90,8 +90,7 @@ const Index: React.FC = () => {
                 showNoteNames={getShowNotes()}
                 showDegrees={getShowDegrees()}
                 colorMode={colorMode}
-                noteRadius={noteSize}
-                title={`${root} ${scaleType}`}
+                colorVariant={colorVariant}
                 subtitle={viewMode === 'tensions' ? 'Tensões destacadas' : undefined}
               />
             </div>
