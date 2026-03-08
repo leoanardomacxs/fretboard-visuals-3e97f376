@@ -381,61 +381,38 @@ function validateAndScore(
   // Reject chords with too many muted strings (3+ muted = unusual)
   if (mutedCount >= 3 && requiredTones > 2) return null;
 
-  // === SCORING SYSTEM ===
-  // Stretch: distance between farthest fingers (bigger span = harder)
-  const stretchPenalty = span === 0 ? 0 : span === 1 ? 5 : span === 2 ? 15 : 30;
+  const stretchPenalty = span * 12;
+  const barrePenalty = barre ? (barre.toString - barre.fromString) * 3 + 6 : 0;
+  const positionPenalty = minFret > 7 ? (minFret - 7) * 6 : minFret > 0 ? minFret : 0;
+  const mutedPenalty = mutedCount * 12;
+  const fullnessBonus = soundingCount >= 5 ? -10 : soundingCount >= 4 ? -5 : 0;
+  const rootBassBonus = rootInBass ? -15 : 10;
 
-  // Barre: always adds difficulty (pressing multiple strings with one finger)
-  const barrePenalty = barre ? 20 + (barre.toString - barre.fromString) * 4 : 0;
-
-  // Finger count: more fingers = harder
-  const fingerCountPenalty = fingerCount <= 2 ? 0 : fingerCount === 3 ? 8 : 18;
-
-  // Position on neck: open chords easiest, higher positions slightly harder
-  const positionPenalty = minFret === 0 ? 0 : minFret <= 3 ? 3 : minFret <= 7 ? minFret * 2 : minFret * 3;
-
-  // Muted strings penalty
-  const mutedPenalty = mutedCount * 8;
-  const fullnessBonus = soundingCount >= 5 ? -8 : soundingCount >= 4 ? -4 : 0;
-  const rootBassBonus = rootInBass ? -12 : 8;
-
-  // Finger distance: check how spread apart individual fingers are on the fretboard
-  let fingerSpreadPenalty = 0;
+  // Awkward finger configurations
+  let awkwardPenalty = 0;
   const fingerPositions: { s: number; f: number }[] = [];
   for (let s = 0; s < 6; s++) {
     if (voicing[s] !== null && voicing[s]! > 0) {
       fingerPositions.push({ s, f: voicing[s]! });
     }
   }
-  // Pairwise finger distance — closer fingers = easier
   for (let i = 0; i < fingerPositions.length - 1; i++) {
-    const cur = fingerPositions[i];
-    const nxt = fingerPositions[i + 1];
-    const fretDist = Math.abs(cur.f - nxt.f);
-    const stringDist = Math.abs(cur.s - nxt.s);
-    // Fingers on same fret and adjacent strings = very easy
-    if (fretDist === 0 && stringDist <= 1) {
-      fingerSpreadPenalty -= 2; // bonus for closeness
-    } else if (fretDist >= 2 && stringDist >= 2) {
-      fingerSpreadPenalty += fretDist * 6 + stringDist * 3; // big stretch across strings
-    } else if (fretDist >= 2) {
-      fingerSpreadPenalty += fretDist * 4;
-    }
-    // Crossing: lower string at higher fret than higher string (awkward)
-    if (cur.s < nxt.s && cur.f > nxt.f + 1) {
-      fingerSpreadPenalty += 12;
+    for (let j = i + 1; j < fingerPositions.length; j++) {
+      if (fingerPositions[i].s < fingerPositions[j].s && fingerPositions[i].f > fingerPositions[j].f + 2) {
+        awkwardPenalty += 15;
+      }
     }
   }
 
   const score =
     stretchPenalty +
-    barrePenalty +
-    fingerCountPenalty +
-    positionPenalty +
     mutedPenalty +
     fullnessBonus +
-    rootBassBonus +
-    fingerSpreadPenalty;
+    positionPenalty +
+    fingerCount * 3 +
+    barrePenalty +
+    awkwardPenalty +
+    rootBassBonus;
 
   // Filter out uncomfortable voicings
   if (score > 90) return null;
