@@ -45,10 +45,18 @@ export interface ChordVoicing {
   score: number; // lower = easier
 }
 
+export interface TriadVoicing extends ChordVoicing {
+  inversion: string; // 'Root', '1st Inv', '2nd Inv'
+  stringSet: string; // e.g. '1-2-3', '2-3-4'
+  cagedShape: string; // C, A, G, E, D
+}
+
+const TRIAD_TYPES = ['major', 'minor', 'dim', 'aug', 'sus2', 'sus4'];
+
 /**
  * Generate all playable voicings for a given root + chord type.
  */
-export function generateChordVoicings(root: string, chordType: string, maxResults = 24): ChordVoicing[] {
+export function generateChordVoicings(root: string, chordType: string, maxResults = 30): ChordVoicing[] {
   const typeDef = CHORD_TYPES[chordType];
   if (!typeDef) return [];
 
@@ -70,7 +78,6 @@ export function generateChordVoicings(root: string, chordType: string, maxResult
     stringOptions.push(options);
   }
 
-  // Enumerate combinations using recursive approach with pruning
   const current: (number | null)[] = new Array(6).fill(null);
   
   function enumerate(stringIdx: number) {
@@ -81,7 +88,6 @@ export function generateChordVoicings(root: string, chordType: string, maxResult
     }
     for (const opt of stringOptions[stringIdx]) {
       current[stringIdx] = opt;
-      // Early pruning: check if remaining strings can still complete chord
       if (canStillComplete(current, stringIdx, stringOptions, chordPitchClasses, rootIdx)) {
         enumerate(stringIdx + 1);
       }
@@ -91,13 +97,162 @@ export function generateChordVoicings(root: string, chordType: string, maxResult
 
   enumerate(0);
 
-  // Deduplicate
+  // Deduplicate with similarity check (80%+ similar = keep only best)
   const deduped = deduplicateVoicings(voicings);
 
-  // Sort by score (ease)
+  // Sort by score (easy → hard)
   deduped.sort((a, b) => a.score - b.score);
 
   return deduped.slice(0, maxResults);
+}
+
+/**
+ * Generate CAGED triad inversions (only for triad chord types).
+ */
+export function generateTriadInversions(root: string, chordType: string): TriadVoicing[] {
+  if (!TRIAD_TYPES.includes(chordType)) return [];
+  
+  const typeDef = CHORD_TYPES[chordType];
+  if (!typeDef || typeDef.intervals.length !== 3) return [];
+
+  const rootIdx = getNoteIndex(root);
+  const intervals = typeDef.intervals;
+  
+  // String sets for triads (guitar string indices, 0=low E, 5=high E)
+  const stringSets: { strings: [number, number, number]; label: string }[] = [
+    { strings: [3, 4, 5], label: '1-2-3' },  // G, B, E (treble)
+    { strings: [2, 3, 4], label: '2-3-4' },  // D, G, B
+    { strings: [1, 2, 3], label: '3-4-5' },  // A, D, G
+    { strings: [0, 1, 2], label: '4-5-6' },  // E, A, D (bass)
+  ];
+
+  // Three inversions: root position, 1st, 2nd
+  const inversions = [
+    { name: 'Fundamental', order: [0, 1, 2] },  // R 3 5
+    { name: '1ª Inversão', order: [1, 2, 0] },   // 3 5 R
+    { name: '2ª Inversão', order: [2, 0, 1] },   // 5 R 3
+  ];
+
+  const results: TriadVoicing[] = [];
+
+  for (const ss of stringSets) {
+    for (const inv of inversions) {
+      // Assign each note of the inversion to the 3 strings (low to high)
+      const targetNotes = inv.order.map(i => (rootIdx + intervals[i]) % 12);
+      
+      // Find fret positions for each string
+      const fretOptions: number[][] = [];
+      for (let i = 0; i < 3; i++) {
+        const stringIdx = ss.strings[i];
+        const openPitch = OPEN_STRINGS[stringIdx] % 12;
+        const options: number[] = [];
+        for (let f = 0; f <= 12; f++) {
+          if ((openPitch + f) % 12 === targetNotes[i]) {
+            options.push(f);
+          }
+        }
+        fretOptions.push(options);
+      }
+
+      // Try all combinations
+      for (const f0 of fretOptions[0]) {
+        for (const f1 of fretOptions[1]) {
+          for (const f2 of fretOptions[2]) {
+            const fretted = [f0, f1, f2].filter(f => f > 0);
+            if (fretted.length === 0) {
+              // All open - valid
+            } else {
+              const minF = Math.min(...fretted);
+              const maxF = Math.max(...fretted);
+              if (maxF - minF > 4) continue; // Too wide
+            }
+
+            // Build full 6-string voicing (mute others)
+            const fullFrets: (number | null)[] = [null, null, null, null, null, null];
+            fullFrets[ss.strings[0]] = f0;
+            fullFrets[ss.strings[1]] = f1;
+            fullFrets[ss.strings[2]] = f2;
+
+            const frettedAll = [f0, f1, f2].filter(f => f > 0);
+            const minFret = frettedAll.length > 0 ? Math.min(...frettedAll) : 0;
+            const maxFret = frettedAll.length > 0 ? Math.max(...frettedAll) : 0;
+            const span = maxFret - minFret;
+
+            const { fingers, barre, fingerCount } = assignFingers(fullFrets, frettedAll, minFret);
+            if (fingerCount > 4 || !fingers) continue;
+
+            const score =
+              span * 10 +
+              (minFret > 0 ? minFret * 2 : 0) +
+              fingerCount * 3;
+
+            const cagedShape = identifyCAGEDShape(fullFrets, ss.strings, rootIdx);
+
+            results.push({
+              root,
+              typeName: chordType,
+              typeLabel: typeDef.label,
+              frets: fullFrets,
+              fingers,
+              barreInfo: barre,
+              startFret: frettedAll.length > 0 ? minFret : 0,
+              score,
+              inversion: inv.name,
+              stringSet: ss.label,
+              cagedShape,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // Deduplicate triads
+  const seen = new Set<string>();
+  const unique: TriadVoicing[] = [];
+  for (const v of results) {
+    const key = v.frets.map(f => f === null ? 'x' : String(f)).join('-');
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(v);
+    }
+  }
+
+  unique.sort((a, b) => a.score - b.score);
+  return unique;
+}
+
+function identifyCAGEDShape(frets: (number | null)[], usedStrings: number[], rootIdx: number): string {
+  // Determine CAGED shape based on string set and root position relative to open shapes
+  const minString = Math.min(...usedStrings);
+  const maxString = Math.max(...usedStrings);
+  
+  // Find the root note position
+  let rootFret = -1;
+  for (const s of usedStrings) {
+    if (frets[s] !== null) {
+      const pitch = (OPEN_STRINGS[s] + frets[s]!) % 12;
+      if (pitch === rootIdx) {
+        rootFret = frets[s]!;
+        break;
+      }
+    }
+  }
+
+  // Simple heuristic based on string set and general shape
+  if (maxString === 5 && minString >= 3) {
+    // Treble strings - likely E or C shape
+    return rootFret <= 3 ? 'C' : 'E';
+  } else if (maxString === 4 && minString >= 2) {
+    // Middle-high - likely A or D shape
+    return rootFret <= 3 ? 'D' : 'A';
+  } else if (maxString === 3 && minString >= 1) {
+    // Middle - G or A shape
+    return rootFret <= 3 ? 'G' : 'A';
+  } else {
+    // Bass strings - E shape
+    return 'E';
+  }
 }
 
 function canStillComplete(
@@ -107,7 +262,6 @@ function canStillComplete(
   chordPitchClasses: Set<number>,
   rootIdx: number
 ): boolean {
-  // Check that fretted notes so far don't violate span
   const fretted = current.slice(0, filledUpTo + 1).filter(f => f !== null && f > 0) as number[];
   if (fretted.length > 0) {
     const minF = Math.min(...fretted);
@@ -115,14 +269,12 @@ function canStillComplete(
     if (maxF - minF > 4) return false;
   }
 
-  // Check pitch classes covered so far + potentially coverable
   const covered = new Set<number>();
   for (let i = 0; i <= filledUpTo; i++) {
     if (current[i] !== null) {
       covered.add((OPEN_STRINGS[i] + current[i]!) % 12);
     }
   }
-  // Remaining strings can potentially cover
   const potentiallyCoverable = new Set(covered);
   for (let i = filledUpTo + 1; i < 6; i++) {
     for (const opt of stringOptions[i]) {
@@ -131,12 +283,10 @@ function canStillComplete(
       }
     }
   }
-  // Must be able to cover all chord tones
   for (const pc of chordPitchClasses) {
     if (!potentiallyCoverable.has(pc)) return false;
   }
 
-  // Must have root somewhere
   const hasRoot = covered.has(rootIdx);
   let canHaveRoot = hasRoot;
   if (!hasRoot) {
@@ -166,12 +316,10 @@ function validateAndScore(
 ): ChordVoicing | null {
   const voicing = [...frets] as (number | null)[];
 
-  // Must have at least 3 sounding strings (or 2 for power chords)
   const sounding = voicing.filter(f => f !== null);
   const minSounding = requiredTones <= 2 ? 2 : 3;
   if (sounding.length < minSounding) return null;
 
-  // All chord pitch classes must be present
   const presentPCs = new Set<number>();
   for (let s = 0; s < 6; s++) {
     if (voicing[s] !== null) {
@@ -182,10 +330,9 @@ function validateAndScore(
     if (!presentPCs.has(pc)) return null;
   }
 
-  // Must contain root
   if (!presentPCs.has(rootIdx)) return null;
 
-  // No muted strings between sounding strings (allows muted on edges only)
+  // No muted strings between sounding strings
   let firstSounding = -1, lastSounding = -1;
   for (let s = 0; s < 6; s++) {
     if (voicing[s] !== null) {
@@ -194,10 +341,9 @@ function validateAndScore(
     }
   }
   for (let s = firstSounding; s <= lastSounding; s++) {
-    if (voicing[s] === null) return null; // muted in the middle
+    if (voicing[s] === null) return null;
   }
 
-  // Fret span check
   const fretted = sounding.filter(f => f! > 0) as number[];
   let minFret = 0, maxFret = 0, span = 0;
   if (fretted.length > 0) {
@@ -207,20 +353,58 @@ function validateAndScore(
     if (span > 4) return null;
   }
 
-  // Finger assignment and barre detection
   const { fingers, barre, fingerCount } = assignFingers(voicing, fretted, minFret);
   if (fingerCount > 4) return null;
   if (!fingers) return null;
 
-  // Score: lower = easier
+  // Comfort penalties
   const mutedCount = voicing.filter(f => f === null).length;
+  const soundingCount = 6 - mutedCount;
+  
+  // Big stretches at low frets are harder
+  const stretchPenalty = span > 3 ? span * 15 : span * 8;
+  
+  // Barre chords are harder, especially wide barres
+  const barrePenalty = barre ? (barre.toString - barre.fromString) * 4 + 8 : 0;
+  
+  // Higher positions are less common/comfortable
+  const positionPenalty = minFret > 7 ? (minFret - 7) * 5 : minFret > 0 ? minFret : 0;
+  
+  // More muted strings = less desirable
+  const mutedPenalty = mutedCount * 10;
+  
+  // Fewer sounding strings = less full sound
+  const fullnessPenalty = (6 - soundingCount) * 6;
+
+  // Awkward finger configurations penalty
+  let awkwardPenalty = 0;
+  // Check for fingers that skip strings
+  const fingerPositions: { s: number; f: number }[] = [];
+  for (let s = 0; s < 6; s++) {
+    if (voicing[s] !== null && voicing[s]! > 0) {
+      fingerPositions.push({ s, f: voicing[s]! });
+    }
+  }
+  // Penalize when high fret is on a lower string (requires awkward hand position)
+  for (let i = 0; i < fingerPositions.length - 1; i++) {
+    for (let j = i + 1; j < fingerPositions.length; j++) {
+      if (fingerPositions[i].s < fingerPositions[j].s && fingerPositions[i].f > fingerPositions[j].f + 2) {
+        awkwardPenalty += 10;
+      }
+    }
+  }
+
   const score =
-    span * 10 +
-    mutedCount * 8 +
-    (6 - sounding.length) * 5 +
-    (minFret > 0 ? minFret * 2 : 0) +
+    stretchPenalty +
+    mutedPenalty +
+    fullnessPenalty +
+    positionPenalty +
     fingerCount * 3 +
-    (barre ? 5 : 0);
+    barrePenalty +
+    awkwardPenalty;
+
+  // Filter out very uncomfortable voicings
+  if (score > 120) return null;
 
   return {
     root,
@@ -242,11 +426,9 @@ function assignFingers(
   const fingers: (number | null)[] = new Array(6).fill(null);
 
   if (fretted.length === 0) {
-    // All open/muted
     return { fingers, barre: null, fingerCount: 0 };
   }
 
-  // Detect barre: if multiple strings are pressed on the same (lowest) fret
   const onMinFret: number[] = [];
   for (let s = 0; s < 6; s++) {
     if (voicing[s] === minFret && minFret > 0) {
@@ -258,11 +440,9 @@ function assignFingers(
   let fingerIdx = 1;
 
   if (onMinFret.length >= 2 && minFret > 0) {
-    // Barre on minFret
     const fromS = Math.min(...onMinFret);
     const toS = Math.max(...onMinFret);
     barre = { fret: minFret, fromString: fromS, toString: toS };
-    // All strings on minFret get finger 1
     for (let s = fromS; s <= toS; s++) {
       if (voicing[s] !== null && voicing[s]! <= minFret) {
         fingers[s] = 1;
@@ -271,7 +451,6 @@ function assignFingers(
     fingerIdx = 2;
   }
 
-  // Assign remaining fingers to other fretted notes, sorted by fret then string
   const remaining: { s: number; f: number }[] = [];
   for (let s = 0; s < 6; s++) {
     if (voicing[s] !== null && voicing[s]! > 0 && fingers[s] === null) {
@@ -290,18 +469,64 @@ function assignFingers(
   return { fingers, barre, fingerCount: totalFingers };
 }
 
+/**
+ * Similarity-based deduplication.
+ * Two voicings are "similar" if >=80% of their fret positions match.
+ * Keep the one with the lower score.
+ */
 function deduplicateVoicings(voicings: ChordVoicing[]): ChordVoicing[] {
-  const seen = new Set<string>();
-  const result: ChordVoicing[] = [];
-
+  // First: exact dedup
+  const exactSeen = new Set<string>();
+  const exactDeduped: ChordVoicing[] = [];
   for (const v of voicings) {
     const key = v.frets.map(f => f === null ? 'x' : String(f)).join('-');
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push(v);
+    if (!exactSeen.has(key)) {
+      exactSeen.add(key);
+      exactDeduped.push(v);
+    }
+  }
+
+  // Sort by score so we keep the better (easier) voicing when similar
+  exactDeduped.sort((a, b) => a.score - b.score);
+
+  // Similarity-based dedup
+  const result: ChordVoicing[] = [];
+  
+  for (const v of exactDeduped) {
+    let isTooSimilar = false;
+    for (const kept of result) {
+      if (areSimilar(v.frets, kept.frets, 0.8)) {
+        isTooSimilar = true;
+        break;
+      }
+    }
+    if (!isTooSimilar) {
+      result.push(v);
+    }
   }
 
   return result;
+}
+
+/**
+ * Check if two voicings are similar above a threshold.
+ * Compares string-by-string: matching frets or both muted = match.
+ */
+function areSimilar(a: (number | null)[], b: (number | null)[], threshold: number): boolean {
+  let matches = 0;
+  for (let i = 0; i < 6; i++) {
+    if (a[i] === b[i]) {
+      matches++;
+    } else if (a[i] !== null && b[i] !== null && Math.abs(a[i]! - b[i]!) <= 0) {
+      // Same fret = match (already covered above)
+    } else if (
+      // One is open/low and other is muted or vice versa - minor difference
+      (a[i] === null && b[i] === 0) || (a[i] === 0 && b[i] === null)
+    ) {
+      matches += 0.8; // Partial match — muted vs open is a small difference
+    }
+  }
+  return (matches / 6) >= threshold;
 }
 
 export function getChordTypeCategories(): { category: string; types: { key: string; label: string }[] }[] {
