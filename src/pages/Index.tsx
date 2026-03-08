@@ -119,6 +119,9 @@ const Index: React.FC = () => {
       case 'chord-generator':
         return <ChordGeneratorView root={root} setRoot={setRoot} />;
 
+      case 'progressions':
+        return <ProgressionGeneratorView root={root} setRoot={setRoot} />;
+
       default:
         return (
           <div className="space-y-4">
