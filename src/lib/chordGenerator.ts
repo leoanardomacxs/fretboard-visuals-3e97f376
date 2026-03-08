@@ -259,8 +259,15 @@ export function generateChordVoicings(root: string, chordType: string, maxResult
   // Deduplicate with similarity check
   const deduped = deduplicateVoicings(allVoicings);
 
-  // Sort by fret position first (closest to nut = first), then by score (easy → hard)
-  deduped.sort((a, b) => a.startFret - b.startFret || a.score - b.score);
+  // Sort by fret position first, then by number of sounding strings (more = better), then score
+  deduped.sort((a, b) => {
+    if (a.startFret !== b.startFret) return a.startFret - b.startFret;
+    // More sounding strings = better (fewer muted)
+    const aMuted = a.frets.filter(f => f === null).length;
+    const bMuted = b.frets.filter(f => f === null).length;
+    if (aMuted !== bMuted) return aMuted - bMuted;
+    return a.score - b.score;
+  });
 
   return deduped.slice(0, maxResults);
 }
