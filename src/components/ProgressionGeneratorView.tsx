@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { getHarmonicField, ALL_ROOTS, type ChordInfo, DEGREE_LABELS, getScale, getNoteIndex, getNoteName, useFlats } from '@/lib/musicTheory';
+import { getHarmonicField, getHarmonicFieldForScale, ALL_ROOTS, type ChordInfo, DEGREE_LABELS, getScale, getNoteIndex, getNoteName, useFlats } from '@/lib/musicTheory';
 import { generateChordVoicings } from '@/lib/chordGenerator';
 import ChordDiagram from './ChordDiagram';
 import { playChordFromFrets, playClick, noteNameToMidi, playChord } from '@/lib/audioEngine';
