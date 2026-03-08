@@ -16,7 +16,7 @@ export type ViewMode =
   | 'full' | 'position' | 'caged' | 'intervals' | 'notes' 
   | 'degrees' | 'notes-degrees' | 'tensions'
   | 'chord' | 'harmonic-field' | 'harmonic-matrix'
-  | 'compare-pentatonics' | 'improvisation' | 'chord-generator';
+  | 'compare-pentatonics' | 'improvisation' | 'chord-generator' | 'progressions';
 
 interface ControlPanelProps {
   root: string;
