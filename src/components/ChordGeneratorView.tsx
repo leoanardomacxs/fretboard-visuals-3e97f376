@@ -121,6 +121,9 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
         <p className="text-sm text-muted-foreground mt-0.5">
           Digitações mais comuns para <span className="font-semibold text-foreground">{chordName}</span>
         </p>
+        <p className="text-[10px] text-muted-foreground/60 mt-1 italic">
+          Escolha a nota e o tipo de acorde abaixo. Clique em qualquer diagrama para ouvir o som. O botão de notas (ON/OFF) mostra os nomes dentro dos pontos.
+        </p>
       </div>
 
       {/* Selectors row */}
@@ -295,6 +298,9 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
             <h3 className="text-lg font-bold text-foreground">Tríades — Inversões</h3>
             <p className="text-sm text-muted-foreground mt-0.5">
               Inversões de {chordName} ordenadas da mais próxima ao início do braço até a mais distante
+            </p>
+            <p className="text-[10px] text-muted-foreground/60 mt-1 italic">
+              Inversões mudam qual nota fica no baixo (mais grave). Fundamental = tônica no baixo, 1ª inversão = terça no baixo, 2ª inversão = quinta no baixo.
             </p>
             <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
               <span className="inline-flex items-center gap-1">

@@ -154,6 +154,9 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
         <p className="text-sm text-muted-foreground mt-0.5">
           Gere progressões harmônicas baseadas no campo de <span className="font-semibold text-foreground">{root} {fieldType}</span>
         </p>
+        <p className="text-[10px] text-muted-foreground/60 mt-1 italic">
+          Progressões são sequências de acordes que formam a base de músicas. Clique "Gerar Aleatória" ou escolha uma progressão clássica abaixo. Clique nos acordes para ouvir.
+        </p>
       </div>
 
       {/* Field type selector */}
@@ -177,7 +180,7 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
       <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex items-center justify-between mb-2">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Campo Harmônico de {root} {fieldType}</p>
-          <button
+          <p className="text-[9px] text-muted-foreground/60 italic">Os 7 acordes que pertencem a esta tonalidade. As progressões usam esses acordes.</p>
             onClick={() => setShowHarmonicField(!showHarmonicField)}
             className="text-[10px] font-semibold px-2 py-0.5 rounded transition-all bg-secondary text-muted-foreground hover:text-foreground"
           >
