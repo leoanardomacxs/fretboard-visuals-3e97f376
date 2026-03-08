@@ -25,6 +25,7 @@ const TYPE_DISPLAY: Record<string, string> = {
   'dim7': '°7', 'half-dim7': 'ø7', 'aug7': '+7', '7sus4': '7sus4',
   'add9': 'Add9', 'madd9': 'mAdd9', '6': '6', 'm6': 'm6',
   '9': '9', 'maj9': 'Maj9', 'm9': 'm9',
+  'all': 'Todos',
 };
 
 const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }) => {
