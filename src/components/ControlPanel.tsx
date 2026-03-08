@@ -94,7 +94,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </Section>
 
       {/* Escala */}
-      <Section title="Escala">
+      <Section title="Escala" collapsible defaultOpen={false}>
         {Object.entries(SCALE_CATEGORIES).map(([cat, scales]) => (
           <div key={cat} className="mb-2">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-semibold">{cat}</p>
@@ -118,7 +118,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </Section>
 
       {/* Visualização */}
-      <Section title="Visualização">
+      <Section title="Visualização" collapsible defaultOpen={false}>
         <div className="space-y-0.5">
           {VIEW_MODES.map(m => (
             <button
@@ -168,7 +168,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       )}
 
       {/* Cores */}
-      <Section title="Cores">
+      <Section title="Cores" collapsible defaultOpen={false}>
         {(['degree', 'note', 'function'] as const).map(c => (
           <button
             key={c}
