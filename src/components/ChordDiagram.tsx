@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ChordVoicing } from '@/lib/chordGenerator';
-import { useFlats, getNoteName as getMusicNoteName } from '@/lib/musicTheory';
+import { CHORD_TYPES } from '@/lib/chordGenerator';
+import { getChordSpellingMap, useFlats, getNoteName as getMusicNoteName } from '@/lib/musicTheory';
 
 const OPEN_STRINGS_SEMI = [4, 9, 2, 7, 11, 4]; // E A D G B E in semitones from C
 
@@ -33,9 +34,18 @@ const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160, showN
     return topY + relative * fretSpacing + fretSpacing / 2;
   };
 
+  // Build a spelling map from the chord's intervals for correct enharmonic names
+  const chordTypeDef = CHORD_TYPES[voicing.typeName];
+  const spellingMap = chordTypeDef
+    ? getChordSpellingMap(voicing.root, chordTypeDef.intervals)
+    : null;
   const flats = useFlats(voicing.root);
+
   const getChordNoteName = (stringIdx: number, fret: number): string => {
     const semitone = (OPEN_STRINGS_SEMI[stringIdx] + fret) % 12;
+    if (spellingMap && spellingMap.has(semitone)) {
+      return spellingMap.get(semitone)!;
+    }
     return getMusicNoteName(semitone, flats);
   };
 

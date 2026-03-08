@@ -133,6 +133,41 @@ export function spellScale(root: string, scaleType: string): string[] {
 }
 
 /**
+ * Spell chord notes with correct enharmonic names.
+ */
+export function spellChordNotes(root: string, intervals: number[]): string[] {
+  const rootSemitone = noteToSemitone(root);
+  const rootLetter = getLetterIndex(root);
+
+  const intervalToLetterOffset = (interval: number): number => {
+    const normalized = interval % 12;
+    if (normalized <= 1) return 0;
+    if (normalized <= 2) return 1;
+    if (normalized <= 4) return 2;
+    if (normalized <= 5) return 3;
+    if (normalized <= 8) return 4;
+    if (normalized <= 9) return 5;
+    return 6;
+  };
+
+  return intervals.map(interval => {
+    const target = (rootSemitone + interval) % 12;
+    const letterOffset = intervalToLetterOffset(interval);
+    const letterIdx = (rootLetter + letterOffset) % 7;
+    return spellNoteOnLetter(target, letterIdx);
+  });
+}
+
+export function getChordSpellingMap(root: string, intervals: number[]): Map<number, string> {
+  const notes = spellChordNotes(root, intervals);
+  const map = new Map<number, string>();
+  for (const note of notes) {
+    map.set(noteToSemitone(note), note);
+  }
+  return map;
+}
+
+/**
  * Build a lookup: semitone → properly spelled note name for a given scale.
  */
 export function getScaleSpellingMap(root: string, scaleType: string): Map<number, string> {

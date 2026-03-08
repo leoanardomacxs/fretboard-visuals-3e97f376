@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import ChordDiagram from './ChordDiagram';
 import { generateChordVoicings, generateTriadInversions, getChordTypeCategories, CHORD_TYPES } from '@/lib/chordGenerator';
 import type { TriadVoicing, ChordVoicing } from '@/lib/chordGenerator';
-import { ALL_ROOTS, NOTES } from '@/lib/musicTheory';
+import { ALL_ROOTS, NOTES, spellChordNotes } from '@/lib/musicTheory';
 import { ChevronDown } from 'lucide-react';
 import { playChordFromFrets, playClick } from '@/lib/audioEngine';
 
@@ -82,9 +82,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
   // Compute chord notes and interval names
   const chordFormula = useMemo(() => {
     if (!typeDef) return { notes: [], intervals: [] };
-    const rootIdx = (NOTES as readonly string[]).indexOf(root);
-    if (rootIdx < 0) return { notes: [], intervals: [] };
-    const notes = typeDef.intervals.map(i => NOTES[(rootIdx + i) % 12]);
+    const notes = spellChordNotes(root, typeDef.intervals);
     const intervals = typeDef.intervals.map(i => INTERVAL_NAMES[i % 12] || `${i}ª`);
     return { notes, intervals };
   }, [root, typeDef]);
