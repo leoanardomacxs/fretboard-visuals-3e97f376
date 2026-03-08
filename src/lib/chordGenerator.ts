@@ -584,8 +584,10 @@ function areSimilar(a: (number | null)[], b: (number | null)[], threshold: numbe
 
 export function getChordTypeCategories(): { category: string; types: { key: string; label: string }[] }[] {
   const ORDER = ['Básicos', 'Power Chord', 'Com Sétima', 'Extensões'];
+  const HIDDEN_TYPES = new Set(['maj9no5']); // variants shown automatically
   const catMap = new Map<string, { key: string; label: string }[]>();
   for (const [key, val] of Object.entries(CHORD_TYPES)) {
+    if (HIDDEN_TYPES.has(key)) continue;
     if (!catMap.has(val.category)) catMap.set(val.category, []);
     catMap.get(val.category)!.push({ key, label: val.label || key });
   }
