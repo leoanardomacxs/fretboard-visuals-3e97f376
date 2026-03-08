@@ -161,6 +161,78 @@ function getTimbreDef(timbre: TimbreType, brightness: number): TimbreDef {
         attackTime: 0.001,
         sustainLevel: 0.001,
       };
+    case 'harpsichord':
+      return {
+        oscTypes: ['sawtooth', 'square', 'sine', 'sine'],
+        harmonicGains: [0.3, 0.25 * br, 0.15 * br, 0.08 * br],
+        harmonicMultipliers: [1, 2, 3, 5],
+        decayMultipliers: [0.6, 0.4, 0.3, 0.2],
+        attackTime: 0.001,
+        sustainLevel: 0.001,
+      };
+    case 'strings':
+      return {
+        oscTypes: ['sawtooth', 'sawtooth', 'sine', 'sine'],
+        harmonicGains: [0.25, 0.22, 0.15 * br, 0.08 * br],
+        harmonicMultipliers: [1, 1.002, 2, 3],
+        decayMultipliers: [3, 3, 2, 1.5],
+        attackTime: 0.08,
+        sustainLevel: 0.15,
+      };
+    case 'flute':
+      return {
+        oscTypes: ['sine', 'sine', 'sine'],
+        harmonicGains: [0.6, 0.08 * br, 0.03 * br],
+        harmonicMultipliers: [1, 2, 3],
+        decayMultipliers: [2, 1.5, 1],
+        attackTime: 0.04,
+        sustainLevel: 0.1,
+      };
+    case 'harmonica':
+      return {
+        oscTypes: ['square', 'sawtooth', 'sine', 'sine'],
+        harmonicGains: [0.3, 0.15, 0.12 * br, 0.06 * br],
+        harmonicMultipliers: [1, 1.003, 2, 3],
+        decayMultipliers: [2.5, 2.5, 1.5, 1],
+        attackTime: 0.015,
+        sustainLevel: 0.08,
+      };
+    case 'musicbox':
+      return {
+        oscTypes: ['sine', 'sine', 'sine'],
+        harmonicGains: [0.5, 0.35 * br, 0.2 * br],
+        harmonicMultipliers: [1, 3, 5],
+        decayMultipliers: [1.5, 0.8, 0.4],
+        attackTime: 0.001,
+        sustainLevel: 0.001,
+      };
+    case 'sitar':
+      return {
+        oscTypes: ['sawtooth', 'sine', 'sine', 'sine'],
+        harmonicGains: [0.35, 0.2 * br, 0.15 * br, 0.1 * br],
+        harmonicMultipliers: [1, 1.01, 2, 4.5],
+        decayMultipliers: [2, 1.8, 1, 0.5],
+        attackTime: 0.002,
+        sustainLevel: 0.01,
+      };
+    case 'marimba':
+      return {
+        oscTypes: ['sine', 'sine', 'sine'],
+        harmonicGains: [0.6, 0.2 * br, 0.1 * br],
+        harmonicMultipliers: [1, 4, 10],
+        decayMultipliers: [0.8, 0.4, 0.2],
+        attackTime: 0.001,
+        sustainLevel: 0.001,
+      };
+    case 'brass':
+      return {
+        oscTypes: ['sawtooth', 'square', 'sine', 'sine'],
+        harmonicGains: [0.35, 0.2, 0.15 * br, 0.1 * br],
+        harmonicMultipliers: [1, 2, 3, 4],
+        decayMultipliers: [2.5, 2, 1.5, 1],
+        attackTime: 0.03,
+        sustainLevel: 0.1,
+      };
   }
 }
 
