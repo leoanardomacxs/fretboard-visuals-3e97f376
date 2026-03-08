@@ -337,6 +337,29 @@ function AudioSettingsPanel() {
         </div>
       </div>
 
+      {/* Octave */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Oitava</span>
+          <span className="text-[9px] text-foreground font-semibold">{audio.octave > 0 ? `+${audio.octave}` : audio.octave}</span>
+        </div>
+        <div className="flex gap-1">
+          {[-2, -1, 0, 1, 2].map(o => (
+            <button
+              key={o}
+              onClick={() => set({ octave: o })}
+              className={`flex-1 py-1 rounded text-[10px] font-semibold transition-all ${
+                audio.octave === o
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+              }`}
+            >
+              {o > 0 ? `+${o}` : o}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Reverb */}
       <div className="space-y-1">
         <div className="flex items-center justify-between">
@@ -355,6 +378,102 @@ function AudioSettingsPanel() {
           <span>Seco</span>
           <span>Ambiente</span>
         </div>
+      </div>
+
+      {/* Delay */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Delay</span>
+          <span className="text-[9px] text-foreground font-semibold">{Math.round(audio.delay * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={Math.round(audio.delay * 100)}
+          onChange={e => set({ delay: Number(e.target.value) / 100 })}
+          className="w-full accent-primary"
+        />
+        {audio.delay > 0.01 && (
+          <div className="space-y-1 pl-2 border-l-2 border-primary/20 mt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-muted-foreground">Tempo</span>
+              <span className="text-[9px] text-foreground font-semibold">{Math.round(audio.delayTime * 1000)}ms</span>
+            </div>
+            <input
+              type="range"
+              min={50}
+              max={1000}
+              value={Math.round(audio.delayTime * 1000)}
+              onChange={e => set({ delayTime: Number(e.target.value) / 1000 })}
+              className="w-full accent-primary"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-muted-foreground">Feedback</span>
+              <span className="text-[9px] text-foreground font-semibold">{Math.round(audio.delayFeedback * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={85}
+              value={Math.round(audio.delayFeedback * 100)}
+              onChange={e => set({ delayFeedback: Number(e.target.value) / 100 })}
+              className="w-full accent-primary"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Distortion */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Distorção</span>
+          <span className="text-[9px] text-foreground font-semibold">{Math.round(audio.distortion * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={Math.round(audio.distortion * 100)}
+          onChange={e => set({ distortion: Number(e.target.value) / 100 })}
+          className="w-full accent-primary"
+        />
+        <div className="flex justify-between text-[9px] text-muted-foreground">
+          <span>Limpo</span>
+          <span>Pesado</span>
+        </div>
+      </div>
+
+      {/* Vibrato */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Vibrato</span>
+          <span className="text-[9px] text-foreground font-semibold">{Math.round(audio.vibrato * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={Math.round(audio.vibrato * 100)}
+          onChange={e => set({ vibrato: Number(e.target.value) / 100 })}
+          className="w-full accent-primary"
+        />
+        {audio.vibrato > 0.01 && (
+          <div className="space-y-1 pl-2 border-l-2 border-primary/20 mt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] text-muted-foreground">Velocidade</span>
+              <span className="text-[9px] text-foreground font-semibold">{audio.vibratoSpeed.toFixed(1)} Hz</span>
+            </div>
+            <input
+              type="range"
+              min={10}
+              max={120}
+              value={Math.round(audio.vibratoSpeed * 10)}
+              onChange={e => set({ vibratoSpeed: Number(e.target.value) / 10 })}
+              className="w-full accent-primary"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
