@@ -83,7 +83,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       {/* Tonalidade */}
-      <Section title="Tonalidade">
+      <Section title="Tonalidade" hint="Escolha a nota base do tom. Clique duplo troca para enarmônico (ex: C# ↔ Db).">
         <div className="grid grid-cols-6 gap-1">
           {ALL_ROOTS.map(n => {
             const isActive = root === n || ENHARMONIC_MAP[root] === n;
@@ -136,31 +136,37 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </Section>
 
       {/* Gerador de Acordes — botão exclusivo */}
-      <button
-        onClick={() => { playClick(500); setViewMode('chord-generator'); }}
-        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-          viewMode === 'chord-generator'
-            ? 'bg-primary text-primary-foreground shadow-md'
-            : 'bg-secondary text-foreground hover:bg-secondary/80'
-        }`}
-      >
-        Gerador de Acordes
-      </button>
+      <div>
+        <button
+          onClick={() => { playClick(500); setViewMode('chord-generator'); }}
+          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+            viewMode === 'chord-generator'
+              ? 'bg-primary text-primary-foreground shadow-md'
+              : 'bg-secondary text-foreground hover:bg-secondary/80'
+          }`}
+        >
+          Gerador de Acordes
+        </button>
+        <p className="text-[9px] text-muted-foreground/70 mt-1 px-1 italic">Todas as digitações possíveis para qualquer acorde. Clique para ouvir.</p>
+      </div>
 
       {/* Progressões — botão exclusivo */}
-      <button
-        onClick={() => { playClick(500); setViewMode('progressions'); }}
-        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-          viewMode === 'progressions'
-            ? 'bg-primary text-primary-foreground shadow-md'
-            : 'bg-secondary text-foreground hover:bg-secondary/80'
-        }`}
-      >
-        Progressões
-      </button>
+      <div>
+        <button
+          onClick={() => { playClick(500); setViewMode('progressions'); }}
+          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+            viewMode === 'progressions'
+              ? 'bg-primary text-primary-foreground shadow-md'
+              : 'bg-secondary text-foreground hover:bg-secondary/80'
+          }`}
+        >
+          Progressões
+        </button>
+        <p className="text-[9px] text-muted-foreground/70 mt-1 px-1 italic">Gere e toque sequências de acordes usadas em músicas reais.</p>
+      </div>
 
       {/* Escala */}
-      <Section title="Escala" collapsible defaultOpen={false}>
+      <Section title="Escala" hint="Tipo de escala para visualizar. Define quais notas pertencem ao tom." collapsible defaultOpen={false}>
         {Object.entries(SCALE_CATEGORIES).map(([cat, scales]) => (
           <div key={cat} className="mb-2">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-semibold">{cat}</p>
@@ -191,7 +197,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </Section>
 
       {/* Visualização */}
-      <Section title="Visualização" collapsible defaultOpen={false}>
+      <Section title="Visualização" hint="Escolha o que exibir: notas, graus, intervalos, campo harmônico ou ferramentas de improvisação." collapsible defaultOpen={false}>
         <div className="space-y-0.5">
           {VIEW_MODES.map(m => (
             <button
@@ -211,7 +217,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* Campo Harmônico - Acordes */}
       {(viewMode === 'chord' || viewMode === 'improvisation') && (
-        <Section title="Acordes">
+        <Section title="Acordes" hint="Acordes do campo harmônico. Clique para ver no braço.">
           <div className="space-y-0.5">
             {harmonicField.map(ch => (
               <button
@@ -233,14 +239,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* Opções */}
       {(viewMode === 'chord' || viewMode === 'improvisation') && (
-        <Section title="Mostrar">
+        <Section title="Mostrar" hint="Camadas extras: arpejo (notas do acorde) e pentatônica associada.">
           <Toggle label="Arpejo" checked={showArpeggio} onChange={setShowArpeggio} />
           <Toggle label="Pentatônica" checked={showPentatonic} onChange={setShowPentatonic} />
         </Section>
       )}
 
       {/* Cores */}
-      <Section title="Cores" collapsible defaultOpen={false}>
+      <Section title="Cores" hint="Mude como as notas são coloridas no braço." collapsible defaultOpen={false}>
         {(['degree', 'note', 'function'] as const).map(c => (
           <button
             key={c}
@@ -255,12 +261,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </Section>
 
       {/* Áudio */}
-      <Section title="Áudio" collapsible defaultOpen={false}>
+      <Section title="Áudio" hint="Timbre, volume e efeitos. Clique nas notas no braço para ouvir." collapsible defaultOpen={false}>
         <AudioSettingsPanel />
       </Section>
 
       {/* Tamanho */}
-      <Section title="Tamanho das Notas">
+      <Section title="Tamanho das Notas" hint="Ajuste o tamanho dos círculos no braço.">
         <input
           type="range"
           min={8}
@@ -272,7 +278,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </Section>
 
       {/* Braço */}
-      <Section title="Braço">
+      <Section title="Braço" hint="Ative para ver o braço completo com 24 casas.">
         <Toggle label="Mostrar até casa 24" checked={show24Frets} onChange={setShow24Frets} />
       </Section>
 
