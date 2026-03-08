@@ -582,12 +582,13 @@ function areSimilar(a: (number | null)[], b: (number | null)[], threshold: numbe
 }
 
 export function getChordTypeCategories(): { category: string; types: { key: string; label: string }[] }[] {
+  const ORDER = ['Básicos', 'Power Chord', 'Com Sétima', 'Extensões'];
   const catMap = new Map<string, { key: string; label: string }[]>();
   for (const [key, val] of Object.entries(CHORD_TYPES)) {
     if (!catMap.has(val.category)) catMap.set(val.category, []);
     catMap.get(val.category)!.push({ key, label: val.label || key });
   }
-  return Array.from(catMap.entries()).map(([category, types]) => ({ category, types }));
+  return ORDER.filter(c => catMap.has(c)).map(c => ({ category: c, types: catMap.get(c)! }));
 }
 
 export function getChordDisplayName(root: string, typeLabel: string): string {
