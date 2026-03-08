@@ -666,11 +666,11 @@ function assignFingers(
     const fromS = Math.min(...onMinFret);
     const toS = Math.max(...onMinFret);
 
-    // Only draw a barre if all strings between fromS and toS are either
-    // on the minFret or fretted (no muted/skipped strings in between)
+    // Only draw a barre if all strings between fromS and toS are fretted
+    // at or above the minFret (no muted strings AND no open strings in between)
     let continuous = true;
     for (let s = fromS; s <= toS; s++) {
-      if (voicing[s] === null) {
+      if (voicing[s] === null || voicing[s]! < minFret) {
         continuous = false;
         break;
       }
