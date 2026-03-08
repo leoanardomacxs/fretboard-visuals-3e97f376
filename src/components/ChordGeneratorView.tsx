@@ -262,8 +262,9 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
             return (
               <div
                 key={i}
-                className={`border rounded-lg p-2 flex flex-col items-center hover:shadow-md transition-shadow note-appear ${difficultyColor} ${difficultyBg}`}
+                className={`border rounded-lg p-2 flex flex-col items-center hover:shadow-md transition-shadow note-appear cursor-pointer ${difficultyColor} ${difficultyBg}`}
                 style={{ animationDelay: `${i * 20}ms` }}
+                onClick={() => playChordFromFrets(v.frets)}
               >
                 <ChordDiagram voicing={v} width={140} showNotes={showNotes} />
                 <div className="mt-1 text-[10px] text-muted-foreground font-mono">
@@ -326,8 +327,9 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
                   {triadVoicings.map((v, i) => (
                     <div
                       key={i}
-                      className={`border rounded-lg p-2 flex flex-col items-center hover:shadow-md transition-shadow note-appear ${invColor}`}
+                      className={`border rounded-lg p-2 flex flex-col items-center hover:shadow-md transition-shadow note-appear cursor-pointer ${invColor}`}
                       style={{ animationDelay: `${i * 30}ms` }}
+                      onClick={() => playChordFromFrets(v.frets)}
                     >
                       <ChordDiagram voicing={v} width={140} showNotes={showNotes} />
                       <div className="mt-1.5 flex flex-col items-center gap-0.5">
