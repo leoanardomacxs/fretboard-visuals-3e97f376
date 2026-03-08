@@ -43,6 +43,111 @@ export const DEGREE_LABELS = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'];
 
 export const CHORD_QUALITIES = ['Major', 'minor', 'minor', 'Major', 'Major', 'minor', 'diminished'];
 
+// ============================================================
+// Enharmonic spelling engine — proper music theory note naming
+// ============================================================
+
+const LETTER_NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'] as const;
+const LETTER_SEMITONES: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+/** Get the letter index (0-6) for a note name */
+function getLetterIndex(note: string): number {
+  return LETTER_NAMES.indexOf(note[0] as any);
+}
+
+/** Convert any note name (e.g. "Eb", "F#", "C") to its semitone (0-11) */
+function noteToSemitone(note: string): number {
+  const base = LETTER_SEMITONES[note[0]];
+  if (base === undefined) return 0;
+  let s = base;
+  for (let i = 1; i < note.length; i++) {
+    if (note[i] === '#') s++;
+    else if (note[i] === 'b') s--;
+  }
+  return ((s % 12) + 12) % 12;
+}
+
+/** Spell a semitone on a specific letter (e.g. semitone 3 on letter E → "Eb") */
+function spellNoteOnLetter(semitone: number, letterIdx: number): string {
+  const natural = LETTER_SEMITONES[LETTER_NAMES[letterIdx]];
+  const diff = ((semitone - natural) % 12 + 12) % 12;
+  const letter = LETTER_NAMES[letterIdx];
+  if (diff === 0) return letter;
+  if (diff === 1) return letter + '#';
+  if (diff === 11) return letter + 'b';
+  if (diff === 2) return letter + '##';
+  if (diff === 10) return letter + 'bb';
+  // Fallback (shouldn't happen in standard music)
+  return letter;
+}
+
+// Pentatonic degree mappings (indices into parent 7-note scale)
+const PENT_MAJOR_DEGREES = [0, 1, 2, 4, 5]; // 1, 2, 3, 5, 6
+const PENT_MINOR_DEGREES = [0, 2, 3, 4, 6]; // 1, b3, 4, 5, b7
+
+/**
+ * Spell a scale with correct enharmonic names.
+ * 7-note scales: each degree uses a unique letter (A-G).
+ * Pentatonic/Blues: derived from parent 7-note scale.
+ */
+export function spellScale(root: string, scaleType: string): string[] {
+  const formula = SCALE_FORMULAS[scaleType];
+  if (!formula) return [];
+
+  const rootSemitone = noteToSemitone(root);
+  const rootLetter = getLetterIndex(root);
+
+  // 7-note scales: each degree gets the next consecutive letter
+  if (formula.length === 7) {
+    return formula.map((interval, i) => {
+      const target = (rootSemitone + interval) % 12;
+      const letterIdx = (rootLetter + i) % 7;
+      return spellNoteOnLetter(target, letterIdx);
+    });
+  }
+
+  // Pentatonic Major → subset of Major scale
+  if (scaleType === 'Pentatônica Maior') {
+    const parent = spellScale(root, 'Maior');
+    return PENT_MAJOR_DEGREES.map(d => parent[d]);
+  }
+
+  // Pentatonic Minor → subset of Natural Minor
+  if (scaleType === 'Pentatônica Menor') {
+    const parent = spellScale(root, 'Menor Natural');
+    return PENT_MINOR_DEGREES.map(d => parent[d]);
+  }
+
+  // Blues → Minor Pentatonic + b5
+  if (scaleType === 'Blues') {
+    const parent = spellScale(root, 'Menor Natural');
+    const b5semitone = (rootSemitone + 6) % 12;
+    const fifthLetterIdx = (rootLetter + 4) % 7; // letter of the 5th degree
+    const b5note = spellNoteOnLetter(b5semitone, fifthLetterIdx);
+    return [parent[0], parent[2], parent[3], b5note, parent[4], parent[6]];
+  }
+
+  // Fallback
+  const flats = useFlats(root);
+  return formula.map(interval => getNoteName(rootSemitone + interval, flats));
+}
+
+/**
+ * Build a lookup: semitone → properly spelled note name for a given scale.
+ */
+export function getScaleSpellingMap(root: string, scaleType: string): Map<number, string> {
+  const notes = spellScale(root, scaleType);
+  const map = new Map<number, string>();
+  for (const note of notes) {
+    map.set(noteToSemitone(note), note);
+  }
+  return map;
+}
+
+// ============================================================
+// Legacy helpers (still used for index lookups)
+// ============================================================
+
 // Use flats for these keys
 const FLAT_KEYS = new Set(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb']);
 
@@ -51,11 +156,8 @@ export function useFlats(root: string): boolean {
 }
 
 export function getNoteIndex(note: string): number {
-  const idx = NOTES.indexOf(note as any);
-  if (idx >= 0) return idx;
-  const idxFlat = NOTES_FLAT.indexOf(note as any);
-  if (idxFlat >= 0) return idxFlat;
-  return 0;
+  // Use the proper semitone parser
+  return noteToSemitone(note);
 }
 
 export function getNoteName(index: number, flats = false): string {
@@ -63,19 +165,18 @@ export function getNoteName(index: number, flats = false): string {
   return flats ? NOTES_FLAT[i] : NOTES[i];
 }
 
+// ============================================================
+// Scale / degree / interval functions
+// ============================================================
+
 export function getScale(root: string, scaleType: string): string[] {
-  const formula = SCALE_FORMULAS[scaleType];
-  if (!formula) return [];
-  const rootIdx = getNoteIndex(root);
-  const flats = useFlats(root);
-  return formula.map(interval => getNoteName(rootIdx + interval, flats));
+  return spellScale(root, scaleType);
 }
 
 export function getDegree(note: string, root: string): number {
-  const rootIdx = getNoteIndex(root);
-  const noteIdx = getNoteIndex(note);
+  const rootIdx = noteToSemitone(root);
+  const noteIdx = noteToSemitone(note);
   const interval = ((noteIdx - rootIdx) + 12) % 12;
-  // Find which degree this interval corresponds to in major scale
   const majorFormula = SCALE_FORMULAS['Maior'];
   const degreeIdx = majorFormula.indexOf(interval);
   return degreeIdx >= 0 ? degreeIdx + 1 : -1;
@@ -84,19 +185,23 @@ export function getDegree(note: string, root: string): number {
 export function getScaleDegree(note: string, root: string, scaleType: string): number {
   const formula = SCALE_FORMULAS[scaleType];
   if (!formula) return -1;
-  const rootIdx = getNoteIndex(root);
-  const noteIdx = getNoteIndex(note);
+  const rootIdx = noteToSemitone(root);
+  const noteIdx = noteToSemitone(note);
   const interval = ((noteIdx - rootIdx) + 12) % 12;
   const idx = formula.indexOf(interval);
   return idx >= 0 ? idx + 1 : -1;
 }
 
 export function getIntervalName(note: string, root: string): string {
-  const rootIdx = getNoteIndex(root);
-  const noteIdx = getNoteIndex(note);
+  const rootIdx = noteToSemitone(root);
+  const noteIdx = noteToSemitone(note);
   const interval = ((noteIdx - rootIdx) + 12) % 12;
   return INTERVAL_NAMES[interval] || '?';
 }
+
+// ============================================================
+// Harmonic field
+// ============================================================
 
 export interface ChordInfo {
   name: string;
@@ -126,18 +231,20 @@ export function getHarmonicFieldForScale(root: string, scaleType: string): Chord
     return getHarmonicFieldForScale(root, 'Maior');
   }
 
-  const rootIdx = getNoteIndex(root);
-  const flats = useFlats(root);
+  // Get properly spelled scale notes
+  const scaleNotes = spellScale(root, scaleType);
 
-  return formula.map((interval, i) => {
-    const noteIdx = (rootIdx + interval) % 12;
-    const note = getNoteName(noteIdx, flats);
+  return scaleNotes.map((note, i) => {
+    // Stack thirds from the scale (every other note)
+    const thirdNote = scaleNotes[(i + 2) % 7];
+    const fifthNote = scaleNotes[(i + 4) % 7];
 
-    // Build triad by stacking thirds from the scale
-    const thirdInterval = formula[(i + 2) % 7] - formula[i];
-    const fifthInterval = formula[(i + 4) % 7] - formula[i];
-    const third = ((thirdInterval % 12) + 12) % 12;
-    const fifth = ((fifthInterval % 12) + 12) % 12;
+    const noteSemi = noteToSemitone(note);
+    const thirdSemi = noteToSemitone(thirdNote);
+    const fifthSemi = noteToSemitone(fifthNote);
+
+    const third = ((thirdSemi - noteSemi) % 12 + 12) % 12;
+    const fifth = ((fifthSemi - noteSemi) % 12 + 12) % 12;
 
     let quality: string;
     let suffix: string;
@@ -155,28 +262,55 @@ export function getHarmonicFieldForScale(root: string, scaleType: string): Chord
       quality = 'Major'; suffix = ''; romanBase = ['I','II','III','IV','V','VI','VII'][i];
     }
 
-    const chordNotes = [
-      note,
-      getNoteName(noteIdx + third, flats),
-      getNoteName(noteIdx + fifth, flats),
-    ];
-
     return {
       name: `${note}${suffix}`,
       root: note,
       quality,
-      notes: chordNotes,
+      notes: [note, thirdNote, fifthNote],
       degree: i + 1,
       romanNumeral: romanBase,
     };
   });
 }
 
-export function getArpeggio(root: string, quality: string, flats = false): string[] {
-  const rootIdx = getNoteIndex(root);
-  if (quality === 'Major') return [root, getNoteName(rootIdx + 4, flats), getNoteName(rootIdx + 7, flats)];
-  if (quality === 'minor') return [root, getNoteName(rootIdx + 3, flats), getNoteName(rootIdx + 7, flats)];
-  if (quality === 'diminished') return [root, getNoteName(rootIdx + 3, flats), getNoteName(rootIdx + 6, flats)];
+// ============================================================
+// Arpeggio & Pentatonic helpers
+// ============================================================
+
+export function getArpeggio(root: string, quality: string, _flats = false): string[] {
+  const rootLetter = getLetterIndex(root);
+  const rootSemi = noteToSemitone(root);
+  const thirdLetter = (rootLetter + 2) % 7; // 3rd is always 2 letters up
+  const fifthLetter = (rootLetter + 4) % 7; // 5th is always 4 letters up
+
+  if (quality === 'Major') {
+    return [
+      root,
+      spellNoteOnLetter((rootSemi + 4) % 12, thirdLetter),
+      spellNoteOnLetter((rootSemi + 7) % 12, fifthLetter),
+    ];
+  }
+  if (quality === 'minor') {
+    return [
+      root,
+      spellNoteOnLetter((rootSemi + 3) % 12, thirdLetter),
+      spellNoteOnLetter((rootSemi + 7) % 12, fifthLetter),
+    ];
+  }
+  if (quality === 'diminished') {
+    return [
+      root,
+      spellNoteOnLetter((rootSemi + 3) % 12, thirdLetter),
+      spellNoteOnLetter((rootSemi + 6) % 12, fifthLetter),
+    ];
+  }
+  if (quality === 'augmented') {
+    return [
+      root,
+      spellNoteOnLetter((rootSemi + 4) % 12, thirdLetter),
+      spellNoteOnLetter((rootSemi + 8) % 12, fifthLetter),
+    ];
+  }
   return [root];
 }
 
@@ -186,6 +320,10 @@ export function getRelatedPentatonic(root: string, quality: string): string[] {
   }
   return getScale(root, 'Pentatônica Maior');
 }
+
+// ============================================================
+// Fretboard
+// ============================================================
 
 export interface FretNote {
   string: number; // 0-5 (low E to high E)
@@ -204,7 +342,7 @@ export function getFretboardNotes(maxFret = 24): FretNote[] {
   for (let s = 0; s < 6; s++) {
     for (let f = 0; f <= maxFret; f++) {
       const midi = STANDARD_TUNING[s] + f;
-      const note = getNoteName(midi, false);
+      const note = getNoteName(midi, false); // raw name, will be respelled in context
       notes.push({ string: s, fret: f, note, midi });
     }
   }
@@ -212,16 +350,16 @@ export function getFretboardNotes(maxFret = 24): FretNote[] {
 }
 
 export function filterByScale(allNotes: FretNote[], root: string, scaleType: string): FretNote[] {
-  const scale = getScale(root, scaleType);
-  const flats = useFlats(root);
-  
+  const spellingMap = getScaleSpellingMap(root, scaleType);
+
   return allNotes
     .filter(n => {
-      const noteName = getNoteName(getNoteIndex(n.note), flats);
-      return scale.includes(noteName);
+      const semi = ((n.midi % 12) + 12) % 12;
+      return spellingMap.has(semi);
     })
     .map(n => {
-      const noteName = getNoteName(getNoteIndex(n.note), flats);
+      const semi = ((n.midi % 12) + 12) % 12;
+      const noteName = spellingMap.get(semi)!;
       const degree = getScaleDegree(noteName, root, scaleType);
       const interval = getIntervalName(noteName, root);
       return {
@@ -229,24 +367,30 @@ export function filterByScale(allNotes: FretNote[], root: string, scaleType: str
         note: noteName,
         degree,
         interval,
-        isRoot: noteName === root,
+        isRoot: noteToSemitone(noteName) === noteToSemitone(root),
       };
     });
 }
 
 export function filterByNotes(allNotes: FretNote[], targetNotes: string[], root: string): FretNote[] {
-  const flats = useFlats(root);
+  // Build semitone → spelled name map from the target notes
+  const targetMap = new Map<number, string>();
+  for (const tn of targetNotes) {
+    targetMap.set(noteToSemitone(tn), tn);
+  }
+
   return allNotes
     .filter(n => {
-      const noteName = getNoteName(getNoteIndex(n.note), flats);
-      return targetNotes.includes(noteName);
+      const semi = ((n.midi % 12) + 12) % 12;
+      return targetMap.has(semi);
     })
     .map(n => {
-      const noteName = getNoteName(getNoteIndex(n.note), flats);
+      const semi = ((n.midi % 12) + 12) % 12;
+      const noteName = targetMap.get(semi)!;
       return {
         ...n,
         note: noteName,
-        isRoot: noteName === root,
+        isRoot: noteToSemitone(noteName) === noteToSemitone(root),
         isChordTone: true,
       };
     });
