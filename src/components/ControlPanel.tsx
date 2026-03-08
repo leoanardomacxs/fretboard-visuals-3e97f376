@@ -114,7 +114,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               {scales.map(s => (
                 <button
                   key={s}
-                  onClick={() => setScaleType(s)}
+                  onClick={() => { setScaleType(s); if (viewMode === 'chord-generator') setViewMode('full'); }}
                   className={`w-full text-left px-2 py-1 rounded text-xs transition-all ${
                     scaleType === s
                       ? 'bg-primary text-primary-foreground'
