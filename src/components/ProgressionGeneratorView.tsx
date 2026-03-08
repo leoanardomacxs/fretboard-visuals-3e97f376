@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { getHarmonicField, type ChordInfo, DEGREE_LABELS, getScale, getNoteIndex, getNoteName, useFlats } from '@/lib/musicTheory';
+import { getHarmonicField, ALL_ROOTS, type ChordInfo, DEGREE_LABELS, getScale, getNoteIndex, getNoteName, useFlats } from '@/lib/musicTheory';
 import { generateChordVoicings } from '@/lib/chordGenerator';
 import ChordDiagram from './ChordDiagram';
 import { playChordFromFrets, playClick, noteNameToMidi, playChord } from '@/lib/audioEngine';
@@ -62,16 +62,22 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeChordIdx, setActiveChordIdx] = useState<number | null>(null);
   const [history, setHistory] = useState<Array<{ degrees: number[]; chords: ChordInfo[] }>>([]);
-  // Display mode for ear training: 'full' | 'degrees' | 'hidden'
-  const [displayMode, setDisplayMode] = useState<'full' | 'degrees' | 'hidden'>('full');
+  // all12 mode: generate in random key
+  const [allKeys, setAllKeys] = useState(false);
 
   const generateNew = useCallback(() => {
-    const prog = generateRandomProgression(harmonicField, progressionLength);
+    let targetRoot = root;
+    if (allKeys) {
+      targetRoot = ALL_ROOTS[Math.floor(Math.random() * ALL_ROOTS.length)];
+      setRoot(targetRoot);
+    }
+    const field = allKeys ? getHarmonicField(targetRoot) : harmonicField;
+    const prog = generateRandomProgression(field, progressionLength);
     setCurrentProgression(prog);
     setHistory(prev => [prog, ...prev].slice(0, 10));
     setActiveChordIdx(null);
     playClick(600);
-  }, [harmonicField, progressionLength]);
+  }, [harmonicField, progressionLength, allKeys, root, setRoot]);
 
   const selectPreset = useCallback((degrees: number[]) => {
     const chords = degrees.map(d => harmonicField[d - 1]);
