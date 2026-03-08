@@ -186,20 +186,6 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
           🎲 Gerar Aleatória
         </button>
 
-        {currentProgression && (
-          <button
-            onClick={playProgression}
-            disabled={isPlaying}
-            className={`px-5 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-              isPlaying
-                ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                : 'bg-accent text-accent-foreground hover:shadow-md hover:scale-[1.02] active:scale-95'
-            }`}
-          >
-            {isPlaying ? '🔊 Tocando...' : '▶️ Tocar Progressão'}
-          </button>
-        )}
-
         {/* Ear training display toggle */}
         <button
           onClick={() => {
@@ -216,6 +202,20 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
         >
           {displayMode === 'full' ? '👁️ Tudo Visível' : displayMode === 'degrees' ? '🎯 Só Graus' : '👂 Oculto (Treino)'}
         </button>
+
+        {currentProgression && (
+          <button
+            onClick={playProgression}
+            disabled={isPlaying}
+            className={`px-5 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+              isPlaying
+                ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                : 'bg-accent text-accent-foreground hover:shadow-md hover:scale-[1.02] active:scale-95'
+            }`}
+          >
+            {isPlaying ? '🔊 Tocando...' : '▶️ Tocar Progressão'}
+          </button>
+        )}
 
         <div className="flex items-center gap-2 ml-auto">
           <span className="text-xs text-muted-foreground">Acordes:</span>
