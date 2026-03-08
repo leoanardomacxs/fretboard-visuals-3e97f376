@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import type { FretNote } from '@/lib/musicTheory';
+import { playNote } from '@/lib/audioEngine';
 
 interface GuitarFretboardProps {
   notes: FretNote[];

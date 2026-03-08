@@ -4,6 +4,7 @@ import { generateChordVoicings, generateTriadInversions, getChordTypeCategories,
 import type { TriadVoicing, ChordVoicing } from '@/lib/chordGenerator';
 import { ALL_ROOTS, NOTES } from '@/lib/musicTheory';
 import { ChevronDown } from 'lucide-react';
+import { playChordFromFrets, playClick } from '@/lib/audioEngine';
 
 const INTERVAL_NAMES: Record<number, string> = {
   0: 'Tônica', 2: '2ª maior', 3: '3ª menor', 4: '3ª maior',
