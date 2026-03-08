@@ -139,21 +139,21 @@ function getTimbreDef(timbre: TimbreType, brightness: number): TimbreDef {
       };
     case 'electric':
       return {
-        oscTypes: ['sawtooth', 'square', 'sine'],
-        harmonicGains: [0.4, 0.2 * br, 0.15 * br],
-        harmonicMultipliers: [1, 2, 3],
-        decayMultipliers: [1.5, 1.0, 0.5],
+        oscTypes: ['sawtooth', 'sawtooth', 'square', 'sine', 'sine'],
+        harmonicGains: [0.35, 0.3, 0.18 * br, 0.12 * br, 0.06 * br],
+        harmonicMultipliers: [1, 1.005, 2, 3, 5],
+        decayMultipliers: [2.0, 2.0, 1.5, 0.8, 0.4],
         attackTime: 0.001,
-        sustainLevel: 0.01,
+        sustainLevel: 0.02,
       };
     case 'synth':
       return {
-        oscTypes: ['sawtooth', 'square', 'sine', 'sine'],
-        harmonicGains: [0.35, 0.2, 0.15 * br, 0.1 * br],
-        harmonicMultipliers: [1, 1.005, 2, 3],
-        decayMultipliers: [2, 2, 1, 0.5],
-        attackTime: 0.01,
-        sustainLevel: 0.05,
+        oscTypes: ['sawtooth', 'sawtooth', 'square', 'sine', 'sine'],
+        harmonicGains: [0.3, 0.28, 0.18 * br, 0.12 * br, 0.07 * br],
+        harmonicMultipliers: [1, 1.008, 0.998, 2, 3],
+        decayMultipliers: [3, 3, 2.5, 1.5, 0.8],
+        attackTime: 0.015,
+        sustainLevel: 0.08,
       };
     case 'organ':
       return {
@@ -175,12 +175,12 @@ function getTimbreDef(timbre: TimbreType, brightness: number): TimbreDef {
       };
     case 'harpsichord':
       return {
-        oscTypes: ['sawtooth', 'square', 'sine', 'sine'],
-        harmonicGains: [0.3, 0.25 * br, 0.15 * br, 0.08 * br],
-        harmonicMultipliers: [1, 2, 3, 5],
-        decayMultipliers: [0.6, 0.4, 0.3, 0.2],
-        attackTime: 0.001,
-        sustainLevel: 0.001,
+        oscTypes: ['sawtooth', 'sawtooth', 'square', 'sine', 'sine'],
+        harmonicGains: [0.28, 0.25 * br, 0.2 * br, 0.12 * br, 0.06 * br],
+        harmonicMultipliers: [1, 2, 3, 4, 6],
+        decayMultipliers: [0.5, 0.4, 0.3, 0.2, 0.12],
+        attackTime: 0.0005,
+        sustainLevel: 0.0005,
       };
     case 'strings':
       return {
@@ -202,12 +202,12 @@ function getTimbreDef(timbre: TimbreType, brightness: number): TimbreDef {
       };
     case 'harmonica':
       return {
-        oscTypes: ['square', 'sawtooth', 'sine', 'sine'],
-        harmonicGains: [0.3, 0.15, 0.12 * br, 0.06 * br],
-        harmonicMultipliers: [1, 1.003, 2, 3],
-        decayMultipliers: [2.5, 2.5, 1.5, 1],
-        attackTime: 0.015,
-        sustainLevel: 0.08,
+        oscTypes: ['square', 'square', 'sawtooth', 'sine', 'sine'],
+        harmonicGains: [0.28, 0.22, 0.14 * br, 0.1 * br, 0.05 * br],
+        harmonicMultipliers: [1, 1.006, 2, 3, 5],
+        decayMultipliers: [3, 3, 2.5, 1.5, 0.8],
+        attackTime: 0.01,
+        sustainLevel: 0.1,
       };
     case 'musicbox':
       return {
@@ -220,12 +220,12 @@ function getTimbreDef(timbre: TimbreType, brightness: number): TimbreDef {
       };
     case 'sitar':
       return {
-        oscTypes: ['sawtooth', 'sine', 'sine', 'sine'],
-        harmonicGains: [0.35, 0.2 * br, 0.15 * br, 0.1 * br],
-        harmonicMultipliers: [1, 1.01, 2, 4.5],
-        decayMultipliers: [2, 1.8, 1, 0.5],
-        attackTime: 0.002,
-        sustainLevel: 0.01,
+        oscTypes: ['sawtooth', 'sawtooth', 'sine', 'sine', 'sine'],
+        harmonicGains: [0.3, 0.25 * br, 0.2 * br, 0.12 * br, 0.08 * br],
+        harmonicMultipliers: [1, 1.015, 2, 4.5, 7.2],
+        decayMultipliers: [2.5, 2.2, 1.5, 0.8, 0.4],
+        attackTime: 0.001,
+        sustainLevel: 0.008,
       };
     case 'marimba':
       return {
@@ -238,12 +238,12 @@ function getTimbreDef(timbre: TimbreType, brightness: number): TimbreDef {
       };
     case 'brass':
       return {
-        oscTypes: ['sawtooth', 'square', 'sine', 'sine'],
-        harmonicGains: [0.35, 0.2, 0.15 * br, 0.1 * br],
-        harmonicMultipliers: [1, 2, 3, 4],
-        decayMultipliers: [2.5, 2, 1.5, 1],
-        attackTime: 0.03,
-        sustainLevel: 0.1,
+        oscTypes: ['sawtooth', 'sawtooth', 'square', 'sine', 'sine'],
+        harmonicGains: [0.3, 0.25, 0.18 * br, 0.12 * br, 0.06 * br],
+        harmonicMultipliers: [1, 1.003, 2, 3, 5],
+        decayMultipliers: [3, 3, 2.5, 1.8, 1],
+        attackTime: 0.04,
+        sustainLevel: 0.12,
       };
   }
 }
