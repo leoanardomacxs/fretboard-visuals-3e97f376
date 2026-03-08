@@ -55,21 +55,17 @@ export interface TriadVoicing extends ChordVoicing {
 const TRIAD_TYPES = ['major', 'minor', 'dim', 'aug', 'sus2', 'sus4'];
 
 /**
- * Generate all playable voicings for a given root + chord type.
+ * Core enumeration: find voicings for a given root + chord type without transposition.
  */
-export function generateChordVoicings(root: string, chordType: string, maxResults = 30): ChordVoicing[] {
-  const typeDef = CHORD_TYPES[chordType];
-  if (!typeDef) return [];
-
+function enumerateVoicings(root: string, chordType: string, typeDef: { intervals: number[]; label: string }): ChordVoicing[] {
   const rootIdx = getNoteIndex(root);
   const chordPitchClasses = new Set(typeDef.intervals.map(i => (rootIdx + i) % 12));
 
   const voicings: ChordVoicing[] = [];
 
-  // For each string, compute valid frets (0-12) that produce a chord tone
   const stringOptions: (number | null)[][] = [];
   for (let s = 0; s < 6; s++) {
-    const options: (number | null)[] = [null]; // muted is always an option
+    const options: (number | null)[] = [null];
     for (let f = 0; f <= 12; f++) {
       const pitch = (OPEN_STRINGS[s] + f) % 12;
       if (chordPitchClasses.has(pitch)) {
@@ -97,11 +93,173 @@ export function generateChordVoicings(root: string, chordType: string, maxResult
   }
 
   enumerate(0);
+  return voicings;
+}
 
-  // Deduplicate with similarity check (80%+ similar = keep only best)
-  const deduped = deduplicateVoicings(voicings);
+/**
+ * Transpose a voicing by a number of semitones.
+ * Only works for voicings with NO open strings (fret 0).
+ * Returns null if the transposed voicing goes out of playable range.
+ */
+function transposeVoicing(
+  voicing: ChordVoicing,
+  semitones: number,
+  targetRoot: string,
+  chordType: string,
+  typeLabel: string
+): ChordVoicing | null {
+  // Skip voicings that use open strings — they can't be transposed
+  for (const f of voicing.frets) {
+    if (f === 0) return null;
+  }
 
-  // Sort by score (easy → hard)
+  const newFrets: (number | null)[] = voicing.frets.map(f => {
+    if (f === null) return null;
+    const newF = f + semitones;
+    if (newF < 1 || newF > 17) return -1 as any; // out of range marker
+    return newF;
+  });
+
+  // Check if any fret went out of range
+  if (newFrets.some(f => f === -1)) return null;
+
+  const fretted = newFrets.filter(f => f !== null && f > 0) as number[];
+  if (fretted.length === 0) return null;
+
+  const minFret = Math.min(...fretted);
+  const maxFret = Math.max(...fretted);
+  const span = maxFret - minFret;
+  if (span > 4) return null;
+
+  // Re-assign fingers for the transposed shape
+  const { fingers, barre, fingerCount } = assignFingers(newFrets, fretted, minFret);
+  if (fingerCount > 4 || !fingers) return null;
+
+  // Re-score the transposed voicing
+  const sounding = newFrets.filter(f => f !== null);
+  const mutedCount = newFrets.filter(f => f === null).length;
+  const soundingCount = 6 - mutedCount;
+
+  // Verify root is present
+  const targetRootIdx = getNoteIndex(targetRoot);
+  const presentPCs = new Set<number>();
+  let hasRoot = false;
+  let rootInBass = false;
+  let firstSounding = true;
+  for (let s = 0; s < 6; s++) {
+    if (newFrets[s] !== null) {
+      const pc = (OPEN_STRINGS[s] + newFrets[s]!) % 12;
+      presentPCs.add(pc);
+      if (pc === targetRootIdx) hasRoot = true;
+      if (firstSounding) {
+        rootInBass = pc === targetRootIdx;
+        firstSounding = false;
+      }
+    }
+  }
+  if (!hasRoot) return null;
+
+  // Check no inner muted strings
+  let firstS = -1, lastS = -1;
+  for (let s = 0; s < 6; s++) {
+    if (newFrets[s] !== null) {
+      if (firstS === -1) firstS = s;
+      lastS = s;
+    }
+  }
+  for (let s = firstS; s <= lastS; s++) {
+    if (newFrets[s] === null) return null;
+  }
+
+  const barreWidth = barre ? (barre.toString - barre.fromString + 1) : 0;
+  const stretchPenalty = span <= 1 ? 0 : span === 2 ? 6 : span === 3 ? 16 : span === 4 ? 30 : 50;
+  const barrePenalty = barre ? 15 + barreWidth * 3 : 0;
+  const positionPenalty = minFret <= 3 ? 3 : minFret <= 5 ? 6 : minFret <= 7 ? 10 : 16;
+  const mutedPenalty = mutedCount * 8;
+  const fullnessBonus = soundingCount >= 5 ? -8 : soundingCount >= 4 ? -4 : 0;
+  const rootBassBonus = rootInBass ? -12 : 8;
+  const fingerPenalty = fingerCount <= 2 ? 0 : fingerCount === 3 ? 5 : 15;
+
+  const fingerPositions: { s: number; f: number }[] = [];
+  for (let s = 0; s < 6; s++) {
+    if (newFrets[s] !== null && newFrets[s]! > 0) {
+      fingerPositions.push({ s, f: newFrets[s]! });
+    }
+  }
+  let fingerDistancePenalty = 0;
+  for (let i = 0; i < fingerPositions.length - 1; i++) {
+    const a = fingerPositions[i];
+    const b = fingerPositions[i + 1];
+    const fretDist = Math.abs(b.f - a.f);
+    if (fretDist >= 3) fingerDistancePenalty += 12;
+    else if (fretDist === 2) fingerDistancePenalty += 5;
+  }
+  let awkwardPenalty = 0;
+  for (let i = 0; i < fingerPositions.length - 1; i++) {
+    for (let j = i + 1; j < fingerPositions.length; j++) {
+      if (fingerPositions[i].s < fingerPositions[j].s && fingerPositions[i].f > fingerPositions[j].f + 2) {
+        awkwardPenalty += 12;
+      }
+    }
+  }
+
+  const score = stretchPenalty + mutedPenalty + fullnessBonus + positionPenalty +
+    fingerPenalty + barrePenalty + fingerDistancePenalty + awkwardPenalty + rootBassBonus;
+
+  if (score > 110) return null;
+
+  return {
+    root: targetRoot,
+    typeName: chordType,
+    typeLabel,
+    frets: newFrets,
+    fingers,
+    barreInfo: barre,
+    startFret: minFret,
+    score,
+  };
+}
+
+// All 12 note names for enumeration
+const ALL_ROOTS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+/**
+ * Generate all playable voicings for a given root + chord type.
+ * Uses direct enumeration PLUS transposition of shapes from all other roots.
+ */
+export function generateChordVoicings(root: string, chordType: string, maxResults = 30): ChordVoicing[] {
+  const typeDef = CHORD_TYPES[chordType];
+  if (!typeDef) return [];
+
+  const targetRootIdx = getNoteIndex(root);
+
+  // 1. Direct enumeration for the target root
+  const directVoicings = enumerateVoicings(root, chordType, typeDef);
+
+  // 2. Transpose shapes from all other roots
+  const transposedVoicings: ChordVoicing[] = [];
+  for (const srcRoot of ALL_ROOTS) {
+    const srcRootIdx = getNoteIndex(srcRoot);
+    if (srcRootIdx === targetRootIdx) continue; // skip self
+
+    const semitoneShift = ((targetRootIdx - srcRootIdx) + 12) % 12;
+    const srcVoicings = enumerateVoicings(srcRoot, chordType, typeDef);
+
+    for (const v of srcVoicings) {
+      const transposed = transposeVoicing(v, semitoneShift, root, chordType, typeDef.label);
+      if (transposed) {
+        transposedVoicings.push(transposed);
+      }
+    }
+  }
+
+  // 3. Merge all voicings
+  const allVoicings = [...directVoicings, ...transposedVoicings];
+
+  // Deduplicate with similarity check
+  const deduped = deduplicateVoicings(allVoicings);
+
+  // Sort by score (easy → hard), then by startFret
   deduped.sort((a, b) => a.score - b.score || a.startFret - b.startFret);
 
   return deduped.slice(0, maxResults);
