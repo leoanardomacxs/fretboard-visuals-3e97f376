@@ -38,6 +38,8 @@ interface ControlPanelProps {
   setDarkMode: (b: boolean) => void;
   colorMode: 'degree' | 'note' | 'function';
   setColorMode: (c: 'degree' | 'note' | 'function') => void;
+  colorVariant: number;
+  setColorVariant: (n: number) => void;
   noteSize: number;
   setNoteSize: (n: number) => void;
   show24Frets: boolean;
@@ -68,6 +70,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   showPentatonic, setShowPentatonic,
   darkMode, setDarkMode,
   colorMode, setColorMode,
+  colorVariant, setColorVariant,
   noteSize, setNoteSize,
   show24Frets, setShow24Frets,
 }) => {
