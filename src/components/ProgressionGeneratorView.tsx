@@ -105,22 +105,26 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
       const chord = currentProgression.chords[i];
       setActiveChordIdx(i);
 
-      // Build proper MIDI notes from the chord's actual notes (root, 3rd, 5th)
-      // Play as a proper voicing: bass note in octave 3, triad in octave 4
-      const bassNote = noteNameToMidi(chord.notes[0], 3); // root in bass
-      const midNotes = chord.notes.map(n => noteNameToMidi(n, 4)); // full triad in octave 4
+      // Octave-aware voicing: chord roots that are chromatically below the key root
+      // in the same octave get bumped up to the next octave for ascending feel
+      let bassOctave = 3;
+      const keySemi = getNoteIndex(root);
+      const keyMidi = noteNameToMidi(root, 3);
+      const chordMidi = noteNameToMidi(chord.root, 3);
+      if (chordMidi < keyMidi) {
+        bassOctave = 4; // wrap to next octave so pitch ascends
+      }
+
+      const bassNote = noteNameToMidi(chord.notes[0], bassOctave);
+      const midOctave = bassOctave + 1;
+      const midNotes = chord.notes.map(n => noteNameToMidi(n, midOctave));
       
-      // Ensure mid notes are all above bass note
       const voicedNotes = [bassNote, ...midNotes.map(m => {
         while (m <= bassNote) m += 12;
         return m;
       })];
       
-      // Remove duplicates (root appears in both bass and triad)
       const uniqueNotes = [...new Set(voicedNotes)].sort((a, b) => a - b);
-
-      console.log(`Playing chord: ${chord.name} | Notes: ${chord.notes.join(', ')} | MIDI: ${uniqueNotes.join(', ')}`);
-      
       playChord(uniqueNotes, 1.0);
 
       await new Promise(resolve => setTimeout(resolve, 1200));
@@ -128,7 +132,7 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
 
     setIsPlaying(false);
     setActiveChordIdx(null);
-  }, [currentProgression, isPlaying]);
+  }, [currentProgression, isPlaying, root]);
 
   // Get best voicing for display
   const getVoicing = useCallback((chord: ChordInfo) => {
