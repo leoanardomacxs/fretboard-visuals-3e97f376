@@ -187,6 +187,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
             </div>
           </div>
         )}
+      </div>
 
       {/* Results count + difficulty legend */}
       <div className="flex items-center justify-between flex-wrap gap-2">
