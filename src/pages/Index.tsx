@@ -31,6 +31,7 @@ const Index: React.FC = () => {
   const [showPentatonic, setShowPentatonic] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [colorMode, setColorMode] = useState<'degree' | 'note' | 'function'>('degree');
+  const [colorVariant, setColorVariant] = useState(0);
   const [noteSize, setNoteSize] = useState(14);
   const [show24Frets, setShow24Frets] = useState(false);
 
@@ -404,6 +405,7 @@ const Index: React.FC = () => {
         showPentatonic={showPentatonic} setShowPentatonic={setShowPentatonic}
         darkMode={darkMode} setDarkMode={setDarkMode}
         colorMode={colorMode} setColorMode={setColorMode}
+        colorVariant={colorVariant} setColorVariant={setColorVariant}
         noteSize={noteSize} setNoteSize={setNoteSize}
         show24Frets={show24Frets} setShow24Frets={setShow24Frets}
       />
