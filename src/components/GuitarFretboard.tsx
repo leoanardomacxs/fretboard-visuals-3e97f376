@@ -244,7 +244,7 @@ const GuitarFretboard: React.FC<GuitarFretboardProps> = ({
           const x = note.fret === 0
             ? paddingLeft - 6
             : paddingLeft + (note.fret - startFret - 0.5) * fretWidth;
-          const y = paddingTop + note.string * stringSpacing;
+          const y = paddingTop + (5 - note.string) * stringSpacing;
           const r = note.isRoot ? noteRadius * 1.15 : noteRadius;
           const color = getNoteColor(note);
           const label = getLabel(note);
