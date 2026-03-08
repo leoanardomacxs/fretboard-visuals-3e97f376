@@ -31,6 +31,7 @@ export const CHORD_TYPES: Record<string, { intervals: number[]; label: string; c
   'm6':          { intervals: [0, 3, 7, 9],    label: 'm6',    category: 'Extensões' },
   '9':           { intervals: [0, 4, 7, 10, 14], label: '9',   category: 'Extensões' },
   'maj9':        { intervals: [0, 4, 7, 11, 14], label: 'maj9', category: 'Extensões' },
+  'maj9no5':     { intervals: [0, 4, 11, 14],    label: 'maj9(no5)', category: 'Extensões' },
   'm9':          { intervals: [0, 3, 7, 10, 14], label: 'm9',  category: 'Extensões' },
 };
 
@@ -583,8 +584,10 @@ function areSimilar(a: (number | null)[], b: (number | null)[], threshold: numbe
 
 export function getChordTypeCategories(): { category: string; types: { key: string; label: string }[] }[] {
   const ORDER = ['Básicos', 'Power Chord', 'Com Sétima', 'Extensões'];
+  const HIDDEN_TYPES = new Set(['maj9no5']); // variants shown automatically
   const catMap = new Map<string, { key: string; label: string }[]>();
   for (const [key, val] of Object.entries(CHORD_TYPES)) {
+    if (HIDDEN_TYPES.has(key)) continue;
     if (!catMap.has(val.category)) catMap.set(val.category, []);
     catMap.get(val.category)!.push({ key, label: val.label || key });
   }

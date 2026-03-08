@@ -52,11 +52,20 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
     if (selectedType === 'all') {
       const allVoicings: (ChordVoicing & { displayType?: string })[] = [];
       for (const [key, def] of Object.entries(CHORD_TYPES)) {
+        if (key === 'maj9no5') continue; // skip variant in "all" view
         const v = generateChordVoicings(root, key, 3);
         v.forEach(voicing => allVoicings.push({ ...voicing, typeLabel: def.label || key }));
       }
       allVoicings.sort((a, b) => a.score - b.score);
       return allVoicings;
+    }
+    // For maj9, also include no5 voicings
+    if (selectedType === 'maj9') {
+      const full = generateChordVoicings(root, 'maj9', 15);
+      const no5 = generateChordVoicings(root, 'maj9no5', 15);
+      const combined = [...full, ...no5];
+      combined.sort((a, b) => a.score - b.score);
+      return combined.slice(0, 30);
     }
     return generateChordVoicings(root, selectedType, 20);
   }, [root, selectedType]);
