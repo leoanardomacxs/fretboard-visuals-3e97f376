@@ -144,7 +144,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           {VIEW_MODES.map(m => (
             <button
               key={m.value}
-              onClick={() => setViewMode(m.value)}
+              onClick={() => { playClick(700); setViewMode(m.value); }}
               className={`w-full text-left px-2 py-1.5 rounded text-xs transition-all flex items-center gap-2 ${
                 viewMode === m.value
                   ? 'bg-primary text-primary-foreground'
@@ -165,7 +165,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {harmonicField.map(ch => (
               <button
                 key={ch.name}
-                onClick={() => setSelectedChord(ch)}
+                onClick={() => { playClick(550); setSelectedChord(ch); }}
                 className={`w-full text-left px-2 py-1.5 rounded text-xs transition-all ${
                   selectedChord?.name === ch.name
                     ? 'bg-accent text-accent-foreground'
@@ -193,7 +193,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         {(['degree', 'note', 'function'] as const).map(c => (
           <button
             key={c}
-            onClick={() => setColorMode(c)}
+            onClick={() => { playClick(650); setColorMode(c); }}
             className={`w-full text-left px-2 py-1 rounded text-xs transition-all ${
               colorMode === c ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-secondary'
             }`}
