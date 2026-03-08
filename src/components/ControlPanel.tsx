@@ -249,18 +249,36 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       )}
 
       {/* Cores */}
-      <Section title="Cores" hint="Mude como as notas são coloridas no braço." collapsible defaultOpen={false}>
-        {(['degree', 'note', 'function'] as const).map(c => (
-          <button
-            key={c}
-            onClick={() => { playClick(650); setColorMode(c); }}
-            className={`w-full text-left px-2 py-1 rounded text-xs transition-all ${
-              colorMode === c ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-secondary'
-            }`}
-          >
-            {c === 'degree' ? 'Por Grau' : c === 'note' ? 'Por Nota' : 'Por Função'}
-          </button>
-        ))}
+      <Section title="Cores" hint="Mude como as notas são coloridas. Clique novamente no modo ativo para alternar entre paletas." collapsible defaultOpen={false}>
+        {(['degree', 'note', 'function'] as const).map(c => {
+          const variantCount = COLOR_VARIANT_COUNTS[c];
+          const isActive = colorMode === c;
+          return (
+            <button
+              key={c}
+              onClick={() => {
+                if (isActive) {
+                  // Cycle variant
+                  setColorVariant((colorVariant + 1) % variantCount);
+                } else {
+                  setColorMode(c);
+                  setColorVariant(0);
+                }
+                playClick(650);
+              }}
+              className={`w-full text-left px-2 py-1 rounded text-xs transition-all flex items-center justify-between ${
+                isActive ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-secondary'
+              }`}
+            >
+              <span>{c === 'degree' ? 'Por Grau' : c === 'note' ? 'Por Nota' : 'Por Função'}</span>
+              {isActive && variantCount > 1 && (
+                <span className="text-[9px] opacity-75">
+                  {colorVariant + 1}/{variantCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </Section>
 
       {/* Áudio */}
