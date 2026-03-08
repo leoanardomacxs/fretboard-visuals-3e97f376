@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ALL_ROOTS,
   SCALE_CATEGORIES,
@@ -207,11 +207,44 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   );
 };
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, collapsible = false, defaultOpen = true }: { title: string; children: React.ReactNode; collapsible?: boolean; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+
   return (
     <div>
-      <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2 font-bold">{title}</h3>
-      {children}
+      {collapsible ? (
+        <button
+          onClick={() => setOpen(!open)}
+          className={`w-full flex items-center justify-between text-[11px] uppercase tracking-wider mb-2 font-bold transition-colors duration-200 rounded px-2 py-1.5 ${
+            open
+              ? 'text-primary bg-primary/10'
+              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+          }`}
+        >
+          <span>{title}</span>
+          <svg
+            className={`w-3.5 h-3.5 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      ) : (
+        <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2 font-bold">{title}</h3>
+      )}
+      {collapsible ? (
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-out ${
+            open ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="animate-fade-in">
+            {children}
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </div>
   );
 }
