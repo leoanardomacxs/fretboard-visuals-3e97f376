@@ -9,7 +9,7 @@ let dryGain: GainNode | null = null;
 let masterGainNode: GainNode | null = null;
 
 // ─── Global Settings ───
-export type TimbreType = 'guitar' | 'nylon' | 'bass' | 'piano' | 'electric' | 'synth' | 'organ' | 'bell';
+export type TimbreType = 'guitar' | 'nylon' | 'bass' | 'piano' | 'electric' | 'synth' | 'organ' | 'bell' | 'harpsichord' | 'strings' | 'flute' | 'harmonica' | 'musicbox' | 'sitar' | 'marimba' | 'brass';
 
 export interface AudioSettings {
   volume: number;       // 0–1
