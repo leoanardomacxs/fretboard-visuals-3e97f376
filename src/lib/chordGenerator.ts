@@ -665,13 +665,33 @@ function assignFingers(
   if (onMinFret.length >= 2 && minFret > 0) {
     const fromS = Math.min(...onMinFret);
     const toS = Math.max(...onMinFret);
-    barre = { fret: minFret, fromString: fromS, toString: toS };
+
+    // Only draw a barre if all strings between fromS and toS are either
+    // on the minFret or fretted (no muted/skipped strings in between)
+    let continuous = true;
     for (let s = fromS; s <= toS; s++) {
-      if (voicing[s] !== null && voicing[s]! <= minFret) {
-        fingers[s] = 1;
+      if (voicing[s] === null) {
+        continuous = false;
+        break;
       }
     }
-    fingerIdx = 2;
+
+    if (continuous) {
+      barre = { fret: minFret, fromString: fromS, toString: toS };
+      for (let s = fromS; s <= toS; s++) {
+        if (voicing[s] !== null && voicing[s]! <= minFret) {
+          fingers[s] = 1;
+        }
+      }
+      fingerIdx = 2;
+    } else {
+      // No barre — treat all minFret notes as individual fingers
+      for (const s of onMinFret) {
+        if (fingerIdx > 4) return { fingers: null, barre: null, fingerCount: 5 };
+        fingers[s] = fingerIdx;
+        fingerIdx++;
+      }
+    }
   }
 
   const remaining: { s: number; f: number }[] = [];
