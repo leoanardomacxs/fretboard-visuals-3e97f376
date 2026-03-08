@@ -116,6 +116,7 @@ const Index: React.FC = () => {
                 colorMode={colorMode}
                 colorVariant={colorVariant}
                 noteRadius={noteSize}
+                title={`Intervalos de ${root} ${scaleType}`}
               />
             </div>
             <IntervalLegend root={root} scaleType={scaleType} />
@@ -187,8 +188,8 @@ const Index: React.FC = () => {
             colorMode={colorMode}
             colorVariant={colorVariant}
             noteRadius={noteSize}
+            title={`Acorde ${selectedChord.name}`}
             subtitle={`Notas: ${selectedChord.notes.join(' ')}`}
-          />
         </div>
         {showArpeggio && (
           <div className="overflow-x-auto pb-2">
@@ -199,6 +200,7 @@ const Index: React.FC = () => {
               colorMode={colorMode}
               colorVariant={colorVariant}
               noteRadius={noteSize}
+              title={`Arpejo de ${selectedChord.name}`}
             />
           </div>
         )}
@@ -212,6 +214,7 @@ const Index: React.FC = () => {
               colorMode={colorMode}
               colorVariant={colorVariant}
               noteRadius={noteSize}
+              title={`Pentatônica de ${selectedChord.root}`}
             />
           </div>
         )}
@@ -223,6 +226,7 @@ const Index: React.FC = () => {
             colorMode={colorMode}
             colorVariant={colorVariant}
             noteRadius={noteSize * 0.85}
+            title={`Escala do Tom (${root} ${scaleType})`}
           />
         </div>
       </div>
@@ -270,6 +274,7 @@ const Index: React.FC = () => {
                 colorMode={colorMode}
                 colorVariant={colorVariant}
                 noteRadius={noteSize * 0.9}
+                title={`${ch.romanNumeral} — ${isPentatonic ? `${ch.root} ${scType}` : ch.name}`}
                 subtitle={`Notas: ${getScale(ch.root, scType).join(' – ')}`}
               />
             </div>
@@ -295,6 +300,7 @@ const Index: React.FC = () => {
                 colorMode={colorMode}
                 colorVariant={colorVariant}
                 compact={true}
+                noteRadius={noteSize * 0.7}
                 title={`${ch.romanNumeral} — ${ch.name}`}
               />
             </div>
@@ -323,6 +329,7 @@ const Index: React.FC = () => {
                 colorMode={colorMode}
                 colorVariant={colorVariant}
                 noteRadius={noteSize * 0.9}
+                title={`${note} ${quality}`}
               />
             </div>
           );
@@ -357,8 +364,8 @@ const Index: React.FC = () => {
             colorMode={colorMode}
             colorVariant={colorVariant}
             noteRadius={noteSize}
+            title={`Notas Alvo — ${selectedChord.name}`}
             subtitle="Chord tones"
-          />
         </div>
         <div className="overflow-x-auto pb-2">
           <GuitarFretboard
@@ -369,6 +376,7 @@ const Index: React.FC = () => {
             colorMode={colorMode}
             colorVariant={colorVariant}
             noteRadius={noteSize}
+            title={`Pentatônica — ${selectedChord.root}`}
           />
         </div>
         <div className="overflow-x-auto pb-2">
@@ -379,6 +387,7 @@ const Index: React.FC = () => {
             colorMode={colorMode}
             colorVariant={colorVariant}
             noteRadius={noteSize * 0.85}
+            title={`Escala Completa — ${root} ${scaleType}`}
           />
         </div>
       </div>
