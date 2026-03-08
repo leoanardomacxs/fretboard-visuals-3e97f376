@@ -18,7 +18,7 @@ export type ViewMode =
   | 'full' | 'position' | 'caged' | 'intervals' | 'notes' 
   | 'degrees' | 'notes-degrees' | 'tensions'
   | 'chord' | 'harmonic-field' | 'harmonic-matrix'
-  | 'compare-pentatonics' | 'improvisation' | 'chord-generator' | 'progressions';
+  | 'compare-pentatonics' | 'improvisation' | 'chord-generator' | 'progressions' | 'harmonic-field-view';
 
 interface ControlPanelProps {
   root: string;
@@ -215,6 +215,21 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         <p className="text-[9px] text-muted-foreground/70 mt-1 px-1 italic">Gere e toque sequências de acordes usadas em músicas reais.</p>
       </div>
 
+      {/* Campo Harmônico — botão exclusivo */}
+      <div>
+        <button
+          onClick={() => { playClick(500); setViewMode('harmonic-field-view'); }}
+          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+            viewMode === 'harmonic-field-view'
+              ? 'bg-primary text-primary-foreground shadow-md'
+              : 'bg-secondary text-foreground hover:bg-secondary/80'
+          }`}
+        >
+          Campo Harmônico
+        </button>
+        <p className="text-[9px] text-muted-foreground/70 mt-1 px-1 italic">Tríades, tétrades, dominantes secundários e ii-V-I para cada grau.</p>
+      </div>
+
       {/* Escala */}
       <Section title="Escala" hint="Tipo de escala para visualizar. Define quais notas pertencem ao tom." collapsible defaultOpen={false}>
         {Object.entries(SCALE_CATEGORIES).map(([cat, scales]) => (
@@ -226,7 +241,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   key={s}
                   onClick={() => {
                     setScaleType(s);
-                    if (viewMode === 'chord-generator' || viewMode === 'progressions') setViewMode('full');
+                    if (viewMode === 'chord-generator' || viewMode === 'progressions' || viewMode === 'harmonic-field-view') setViewMode('full');
                     const formula = SCALE_FORMULAS[s];
                     if (formula) {
                       playScale(getScaleMidiNotes(root, formula), 0.2, 0.4);
