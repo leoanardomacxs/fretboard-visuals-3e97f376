@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import GuitarFretboard from '@/components/GuitarFretboard';
 import ControlPanel, { type ViewMode } from '@/components/ControlPanel';
-import ChordExplorer from '@/components/ChordExplorer';
 import {
   getScale,
   getHarmonicField,
@@ -114,14 +113,6 @@ const Index: React.FC = () => {
 
       case 'improvisation':
         return renderImprovisationView();
-
-      case 'chord-explorer':
-        return (
-          <div className="space-y-4">
-            <ViewHeader title="Gerador de Acordes & Tríades" subtitle="Voicings, inversões e sistema CAGED" />
-            <ChordExplorer />
-          </div>
-        );
 
       default:
         return (
