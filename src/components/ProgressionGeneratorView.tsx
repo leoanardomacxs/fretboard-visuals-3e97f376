@@ -142,8 +142,8 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
     3: 'border-teal-500/50 bg-teal-500/10',
     4: 'border-amber-500/50 bg-amber-500/10',
     5: 'border-orange-500/50 bg-orange-500/10',
-    6: 'border-purple-500/50 bg-purple-500/10',
-    7: 'border-red-500/50 bg-red-500/10',
+    6: 'border-red-500/50 bg-red-500/10',
+    7: 'border-purple-500/50 bg-purple-500/10',
   };
 
   return (
