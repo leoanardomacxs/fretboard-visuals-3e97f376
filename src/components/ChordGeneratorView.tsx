@@ -14,10 +14,11 @@ const TRIAD_TYPES = ['major', 'minor', 'dim', 'aug', 'sus2', 'sus4'];
 
 const TYPE_DISPLAY: Record<string, string> = {
   'major': 'Maior', 'minor': 'Menor', 'dim': 'Dim', 'aug': 'Aum',
-  'sus2': 'sus2', 'sus4': 'sus4', '7': '7', 'maj7': 'maj7',
-  'min7': 'm7', 'min-maj7': 'm(maj7)', 'dim7': '°7', 'half-dim7': 'ø7',
-  'aug7': '+7', '7sus4': '7sus4', 'add9': 'add9', 'madd9': 'madd9',
-  '6': '6', 'm6': 'm6', '9': '9', 'maj9': 'maj9', 'm9': 'm9', '5': '5',
+  'sus2': 'Sus2', 'sus4': 'Sus4', '5': 'Power (5)',
+  '7': '7', 'maj7': 'Maj7', 'min7': 'm7', 'min-maj7': 'm(Maj7)',
+  'dim7': '°7', 'half-dim7': 'ø7', 'aug7': '+7', '7sus4': '7sus4',
+  'add9': 'Add9', 'madd9': 'mAdd9', '6': '6', 'm6': 'm6',
+  '9': '9', 'maj9': 'Maj9', 'm9': 'm9',
 };
 
 const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }) => {

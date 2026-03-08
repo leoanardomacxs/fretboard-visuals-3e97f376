@@ -6,23 +6,25 @@ const STRING_NAMES = ['E', 'A', 'D', 'G', 'B', 'E'];
 
 // Chord type definitions: intervals from root in semitones
 export const CHORD_TYPES: Record<string, { intervals: number[]; label: string; category: string }> = {
-  // Triads
-  'major':       { intervals: [0, 4, 7],       label: '',      category: 'Tríades' },
-  'minor':       { intervals: [0, 3, 7],       label: 'm',     category: 'Tríades' },
-  'dim':         { intervals: [0, 3, 6],       label: '°',     category: 'Tríades' },
-  'aug':         { intervals: [0, 4, 8],       label: '+',     category: 'Tríades' },
-  'sus2':        { intervals: [0, 2, 7],       label: 'sus2',  category: 'Tríades' },
-  'sus4':        { intervals: [0, 5, 7],       label: 'sus4',  category: 'Tríades' },
-  // Tetrads
-  '7':           { intervals: [0, 4, 7, 10],   label: '7',     category: 'Tétrades' },
-  'maj7':        { intervals: [0, 4, 7, 11],   label: 'maj7',  category: 'Tétrades' },
-  'min7':        { intervals: [0, 3, 7, 10],   label: 'm7',    category: 'Tétrades' },
-  'min-maj7':    { intervals: [0, 3, 7, 11],   label: 'm(maj7)', category: 'Tétrades' },
-  'dim7':        { intervals: [0, 3, 6, 9],    label: '°7',    category: 'Tétrades' },
-  'half-dim7':   { intervals: [0, 3, 6, 10],   label: 'ø7',    category: 'Tétrades' },
-  'aug7':        { intervals: [0, 4, 8, 10],   label: '+7',    category: 'Tétrades' },
-  '7sus4':       { intervals: [0, 5, 7, 10],   label: '7sus4', category: 'Tétrades' },
-  // Extensions
+  // Tríades básicas
+  'major':       { intervals: [0, 4, 7],       label: '',      category: 'Básicos' },
+  'minor':       { intervals: [0, 3, 7],       label: 'm',     category: 'Básicos' },
+  'dim':         { intervals: [0, 3, 6],       label: '°',     category: 'Básicos' },
+  'aug':         { intervals: [0, 4, 8],       label: '+',     category: 'Básicos' },
+  'sus2':        { intervals: [0, 2, 7],       label: 'sus2',  category: 'Básicos' },
+  'sus4':        { intervals: [0, 5, 7],       label: 'sus4',  category: 'Básicos' },
+  // Power chord
+  '5':           { intervals: [0, 7],           label: '5',     category: 'Power Chord' },
+  // Acordes com sétima
+  '7':           { intervals: [0, 4, 7, 10],   label: '7',     category: 'Com Sétima' },
+  'maj7':        { intervals: [0, 4, 7, 11],   label: 'maj7',  category: 'Com Sétima' },
+  'min7':        { intervals: [0, 3, 7, 10],   label: 'm7',    category: 'Com Sétima' },
+  'min-maj7':    { intervals: [0, 3, 7, 11],   label: 'm(maj7)', category: 'Com Sétima' },
+  'dim7':        { intervals: [0, 3, 6, 9],    label: '°7',    category: 'Com Sétima' },
+  'half-dim7':   { intervals: [0, 3, 6, 10],   label: 'ø7',    category: 'Com Sétima' },
+  'aug7':        { intervals: [0, 4, 8, 10],   label: '+7',    category: 'Com Sétima' },
+  '7sus4':       { intervals: [0, 5, 7, 10],   label: '7sus4', category: 'Com Sétima' },
+  // Extensões
   'add9':        { intervals: [0, 4, 7, 14],   label: 'add9',  category: 'Extensões' },
   'madd9':       { intervals: [0, 3, 7, 14],   label: 'madd9', category: 'Extensões' },
   '6':           { intervals: [0, 4, 7, 9],    label: '6',     category: 'Extensões' },
@@ -30,8 +32,6 @@ export const CHORD_TYPES: Record<string, { intervals: number[]; label: string; c
   '9':           { intervals: [0, 4, 7, 10, 14], label: '9',   category: 'Extensões' },
   'maj9':        { intervals: [0, 4, 7, 11, 14], label: 'maj9', category: 'Extensões' },
   'm9':          { intervals: [0, 3, 7, 10, 14], label: 'm9',  category: 'Extensões' },
-  // Power
-  '5':           { intervals: [0, 7],           label: '5',     category: 'Power' },
 };
 
 export interface ChordVoicing {
