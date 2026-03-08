@@ -62,7 +62,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
   // Compute chord notes and interval names
   const chordFormula = useMemo(() => {
     if (!typeDef) return { notes: [], intervals: [] };
-    const rootIdx = NOTES.indexOf(root);
+    const rootIdx = (NOTES as readonly string[]).indexOf(root);
     if (rootIdx < 0) return { notes: [], intervals: [] };
     const notes = typeDef.intervals.map(i => NOTES[(rootIdx + i) % 12]);
     const intervals = typeDef.intervals.map(i => INTERVAL_NAMES[i % 12] || `${i}ª`);
