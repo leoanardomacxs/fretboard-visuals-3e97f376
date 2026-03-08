@@ -81,7 +81,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           {ALL_ROOTS.map(n => (
             <button
               key={n}
-              onClick={() => setRoot(n)}
+              onClick={() => { playClick(600 + ALL_ROOTS.indexOf(n) * 40); setRoot(n); }}
               className={`px-1 py-1.5 rounded text-xs font-semibold transition-all ${
                 root === n
                   ? 'bg-primary text-primary-foreground shadow-sm'
@@ -96,7 +96,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* Gerador de Acordes — botão exclusivo */}
       <button
-        onClick={() => setViewMode('chord-generator')}
+        onClick={() => { playClick(500); setViewMode('chord-generator'); }}
         className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
           viewMode === 'chord-generator'
             ? 'bg-primary text-primary-foreground shadow-md'
@@ -116,7 +116,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               {scales.map(s => (
                 <button
                   key={s}
-                  onClick={() => { setScaleType(s); if (viewMode === 'chord-generator') setViewMode('full'); }}
+                  onClick={() => {
+                    setScaleType(s);
+                    if (viewMode === 'chord-generator') setViewMode('full');
+                    const formula = SCALE_FORMULAS[s];
+                    if (formula) {
+                      playScale(getScaleMidiNotes(root, formula), 0.2, 0.4);
+                    }
+                  }}
                   className={`w-full text-left px-2 py-1 rounded text-xs transition-all ${
                     scaleType === s
                       ? 'bg-primary text-primary-foreground'

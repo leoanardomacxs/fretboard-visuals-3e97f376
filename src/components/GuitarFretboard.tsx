@@ -258,8 +258,9 @@ const GuitarFretboard: React.FC<GuitarFretboardProps> = ({
           return (
             <g
               key={`note-${note.string}-${note.fret}`}
-              className="note-appear"
+              className="note-appear cursor-pointer"
               style={{ animationDelay: `${idx * 8}ms` }}
+              onClick={() => playNote(note.midi, 0.8, 0.35)}
             >
               <circle
                 cx={x}
