@@ -56,7 +56,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }
         const v = generateChordVoicings(root, key, 3);
         v.forEach(voicing => allVoicings.push({ ...voicing, typeLabel: def.label || key }));
       }
-      allVoicings.sort((a, b) => a.score - b.score || a.startFret - b.startFret);
+      allVoicings.sort((a, b) => a.startFret - b.startFret || a.score - b.score);
       return allVoicings;
     }
     // For maj9, also include no5 voicings
