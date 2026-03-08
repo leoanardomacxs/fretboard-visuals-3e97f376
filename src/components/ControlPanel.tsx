@@ -133,7 +133,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       {/* Tonalidade */}
-      <Section title="Tonalidade" hint="Escolha a nota base do tom. Clique duplo troca para enarmônico (ex: C# ↔ Db).">
+      <Section title="Tonalidade">
         <div className="grid grid-cols-6 gap-1">
           {ALL_ROOTS.map(n => {
             const isActive = root === n || ENHARMONIC_MAP[root] === n;
@@ -197,7 +197,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         >
           Gerador de Acordes
         </button>
-        <p className="text-[9px] text-muted-foreground/70 mt-1 px-1 italic">Todas as digitações possíveis para qualquer acorde. Clique para ouvir.</p>
+        
       </div>
 
       {/* Progressões — botão exclusivo */}
@@ -212,7 +212,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         >
           Progressões
         </button>
-        <p className="text-[9px] text-muted-foreground/70 mt-1 px-1 italic">Gere e toque sequências de acordes usadas em músicas reais.</p>
+        
       </div>
 
       {/* Campo Harmônico — botão exclusivo */}
@@ -227,11 +227,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         >
           Campo Harmônico
         </button>
-        <p className="text-[9px] text-muted-foreground/70 mt-1 px-1 italic">Tríades, tétrades, dominantes secundários e ii-V-I para cada grau.</p>
+        
       </div>
 
       {/* Escala */}
-      <Section title="Escala" hint="Tipo de escala para visualizar. Define quais notas pertencem ao tom." collapsible defaultOpen={false}>
+      <Section title="Escala" collapsible defaultOpen={false}>
         {Object.entries(SCALE_CATEGORIES).map(([cat, scales]) => (
           <div key={cat} className="mb-2">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-semibold">{cat}</p>
@@ -262,7 +262,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </Section>
 
       {/* Visualização */}
-      <Section title="Visualização" hint="Escolha o que exibir: notas, graus, intervalos, campo harmônico ou ferramentas de improvisação." collapsible defaultOpen={false}>
+      <Section title="Visualização" collapsible defaultOpen={false}>
         <div className="space-y-0.5">
           {VIEW_MODES.map(m => (
             <button
@@ -282,7 +282,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* Campo Harmônico - Acordes */}
       {(viewMode === 'chord' || viewMode === 'improvisation') && (
-        <Section title="Acordes" hint="Acordes do campo harmônico. Clique para ver no braço.">
+        <Section title="Acordes">
           <div className="space-y-0.5">
             {harmonicField.map(ch => (
               <button
@@ -304,14 +304,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* Opções */}
       {(viewMode === 'chord' || viewMode === 'improvisation') && (
-        <Section title="Mostrar" hint="Camadas extras: arpejo (notas do acorde) e pentatônica associada.">
+        <Section title="Mostrar">
           <Toggle label="Arpejo" checked={showArpeggio} onChange={setShowArpeggio} />
           <Toggle label="Pentatônica" checked={showPentatonic} onChange={setShowPentatonic} />
         </Section>
       )}
 
       {/* Cores */}
-      <Section title="Cores" hint="Mude como as notas são coloridas. Clique novamente no modo ativo para alternar entre paletas." collapsible defaultOpen={false}>
+      <Section title="Cores" collapsible defaultOpen={false}>
         {(['degree', 'note', 'function'] as const).map(c => {
           const variantCount = COLOR_VARIANT_COUNTS[c];
           const isActive = colorMode === c;
@@ -344,12 +344,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </Section>
 
       {/* Áudio */}
-      <Section title="Áudio" hint="Timbre, volume e efeitos. Clique nas notas no braço para ouvir." collapsible defaultOpen={false}>
+      <Section title="Áudio" collapsible defaultOpen={false}>
         <AudioSettingsPanel />
       </Section>
 
       {/* Tamanho */}
-      <Section title="Tamanho das Notas" hint="Ajuste o tamanho dos círculos no braço.">
+      <Section title="Tamanho das Notas">
         <input
           type="range"
           min={8}
@@ -361,7 +361,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </Section>
 
       {/* Braço */}
-      <Section title="Braço" hint="Ative para ver o braço completo com 24 casas.">
+      <Section title="Braço">
         <Toggle label="Mostrar até casa 24" checked={show24Frets} onChange={setShow24Frets} />
       </Section>
 
