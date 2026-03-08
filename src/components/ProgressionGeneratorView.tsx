@@ -105,19 +105,23 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
       const chord = currentProgression.chords[i];
       setActiveChordIdx(i);
 
-      // Get a voicing and play it
-      const qualityMap: Record<string, string> = {
-        'Major': 'major', 'minor': 'minor', 'diminished': 'dim', 'augmented': 'aug',
-      };
-      const typeKey = qualityMap[chord.quality] || 'major';
-      const voicings = generateChordVoicings(chord.root, typeKey, 1);
-      if (voicings.length > 0) {
-        playChordFromFrets(voicings[0].frets);
-      } else {
-        // fallback: play triad notes spread across octaves for proper voicing
-        const midiNotes = chord.notes.map((n, idx) => noteNameToMidi(n, 3 + Math.floor(idx / 3)));
-        playChord(midiNotes, 1.0);
-      }
+      // Build proper MIDI notes from the chord's actual notes (root, 3rd, 5th)
+      // Play as a proper voicing: bass note in octave 3, triad in octave 4
+      const bassNote = noteNameToMidi(chord.notes[0], 3); // root in bass
+      const midNotes = chord.notes.map(n => noteNameToMidi(n, 4)); // full triad in octave 4
+      
+      // Ensure mid notes are all above bass note
+      const voicedNotes = [bassNote, ...midNotes.map(m => {
+        while (m <= bassNote) m += 12;
+        return m;
+      })];
+      
+      // Remove duplicates (root appears in both bass and triad)
+      const uniqueNotes = [...new Set(voicedNotes)].sort((a, b) => a - b);
+
+      console.log(`Playing chord: ${chord.name} | Notes: ${chord.notes.join(', ')} | MIDI: ${uniqueNotes.join(', ')}`);
+      
+      playChord(uniqueNotes, 1.0);
 
       await new Promise(resolve => setTimeout(resolve, 1200));
     }
