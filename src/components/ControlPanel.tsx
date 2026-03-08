@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import {
   ALL_ROOTS,
   SCALE_CATEGORIES,
+  SCALE_FORMULAS,
   type ChordInfo,
 } from '@/lib/musicTheory';
+import { playClick, playScale, getScaleMidiNotes } from '@/lib/audioEngine';
 
 export type ViewMode = 
   | 'full' | 'position' | 'caged' | 'intervals' | 'notes' 
