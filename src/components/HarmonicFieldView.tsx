@@ -30,12 +30,12 @@ const ROMAN_MINOR = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii'];
 
 const DEGREE_COLORS: Record<number, string> = {
   1: 'border-blue-500/50 bg-blue-500/10',
-  2: 'border-emerald-500/50 bg-emerald-500/10',
-  3: 'border-teal-500/50 bg-teal-500/10',
-  4: 'border-amber-500/50 bg-amber-500/10',
-  5: 'border-orange-500/50 bg-orange-500/10',
-  6: 'border-red-500/50 bg-red-500/10',
-  7: 'border-purple-500/50 bg-purple-500/10',
+  2: 'border-yellow-500/50 bg-yellow-500/10',
+  3: 'border-blue-500/50 bg-blue-500/10',
+  4: 'border-yellow-500/50 bg-yellow-500/10',
+  5: 'border-red-500/50 bg-red-500/10',
+  6: 'border-blue-500/50 bg-blue-500/10',
+  7: 'border-red-500/50 bg-red-500/10',
 };
 
 const FUNCTION_LABELS: Record<string, string> = {
@@ -391,7 +391,7 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
                   {triadField.filter((_, i) => [1, 3].includes(i)).map(c => c.romanNumeral).join(', ')}
                 </p>
               </div>
-              <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/30">
+              <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
                 <span className="font-bold text-foreground">Dominante</span>
                 <p className="text-muted-foreground mt-0.5">Tensão, resolução</p>
                 <p className="font-mono text-foreground mt-1">
