@@ -1,15 +1,18 @@
 import React from 'react';
 import type { ChordVoicing } from '@/lib/chordGenerator';
+import { NOTES } from '@/lib/musicTheory';
+
+const OPEN_STRINGS_SEMI = [0, 5, 10, 3, 7, 0]; // E A D G B E in semitones from C
 
 interface ChordDiagramProps {
   voicing: ChordVoicing;
   width?: number;
+  showNotes?: boolean;
 }
 
-const STRING_NAMES = ['E', 'A', 'D', 'G', 'B', 'E'];
 const NUM_FRETS_SHOWN = 5;
 
-const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160 }) => {
+const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160, showNotes = false }) => {
   const { frets, fingers, barreInfo, startFret } = voicing;
 
   const padding = { top: 48, bottom: 20, left: 28, right: 16 };
@@ -28,6 +31,11 @@ const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160 }) => 
   const getY = (fretNum: number) => {
     const relative = fretNum - diagramStartFret;
     return topY + relative * fretSpacing + fretSpacing / 2;
+  };
+
+  const getNoteName = (stringIdx: number, fret: number): string => {
+    const semitone = (OPEN_STRINGS_SEMI[stringIdx] + fret) % 12;
+    return NOTES[semitone];
   };
 
   return (
@@ -80,6 +88,21 @@ const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160 }) => 
           );
         }
         if (f === 0) {
+          if (showNotes) {
+            // Show note name for open strings
+            return (
+              <text
+                key={`open-${s}`}
+                x={x}
+                y={y - 1}
+                textAnchor="middle"
+                className="fill-primary"
+                style={{ fontSize: 9, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}
+              >
+                {getNoteName(s, 0)}
+              </text>
+            );
+          }
           return (
             <circle
               key={`open-${s}`}
@@ -155,9 +178,8 @@ const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160 }) => 
         if (f === null || f === 0) return null;
         const x = getX(s);
         const y = getY(f);
-        const isRoot = ((40 + [0, 5, 10, 15, 19, 24][s] + f) % 12) === ((40 + [0, 5, 10, 15, 19, 24][s]) % 12 + f) % 12;
-        // Check if this string is part of barre (and on the barre fret) — already drawn
         const isBarreFret = barreInfo && f === barreInfo.fret && s >= barreInfo.fromString && s <= barreInfo.toString;
+        const noteName = getNoteName(s, f);
 
         return (
           <g key={`dot-${s}`} className="note-appear" style={{ animationDelay: `${s * 30}ms` }}>
@@ -170,18 +192,16 @@ const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160 }) => 
                 opacity={0.85}
               />
             )}
-            {fingers[s] && (
-              <text
-                x={x}
-                y={y + 1}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fill={isBarreFret ? 'hsl(var(--background))' : 'hsl(var(--background))'}
-                style={{ fontSize: 9, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}
-              >
-                {fingers[s]}
-              </text>
-            )}
+            <text
+              x={x}
+              y={y + 1}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="hsl(var(--background))"
+              style={{ fontSize: showNotes ? 8 : 9, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}
+            >
+              {showNotes ? noteName : (fingers[s] || '')}
+            </text>
           </g>
         );
       })}
