@@ -397,7 +397,7 @@ function validateAndScore(
   // --- Improved scoring ---
 
   // Stretch: bigger span between fingers = harder
-  const stretchPenalty = span <= 1 ? 0 : span === 2 ? 8 : span === 3 ? 22 : 40;
+  const stretchPenalty = span <= 1 ? 0 : span === 2 ? 6 : span === 3 ? 16 : span === 4 ? 30 : 50;
 
   // Barre chords are harder
   const barreWidth = barre ? (barre.toString - barre.fromString + 1) : 0;
@@ -469,7 +469,7 @@ function validateAndScore(
     openBonus;
 
   // Filter out uncomfortable voicings
-  if (score > 90) return null;
+  if (score > 110) return null;
 
   return {
     root,
@@ -560,7 +560,7 @@ function deduplicateVoicings(voicings: ChordVoicing[]): ChordVoicing[] {
   for (const v of exactDeduped) {
     let isTooSimilar = false;
     for (const kept of result) {
-      if (areSimilar(v.frets, kept.frets, 0.8)) {
+      if (areSimilar(v.frets, kept.frets, 0.7)) {
         isTooSimilar = true;
         break;
       }
