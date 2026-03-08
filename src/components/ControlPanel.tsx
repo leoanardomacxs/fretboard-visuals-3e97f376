@@ -539,4 +539,26 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
   );
 }
 
+function UserFooter() {
+  const { displayName, signOut } = useAuth();
+  return (
+    <div className="mt-auto pt-4 border-t border-border">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+            {displayName?.[0]?.toUpperCase() || '?'}
+          </div>
+          <span className="text-xs font-medium text-foreground truncate">{displayName || 'Usuário'}</span>
+        </div>
+        <button
+          onClick={signOut}
+          className="text-[10px] px-2 py-1 rounded bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all shrink-0"
+        >
+          Sair
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default ControlPanel;
