@@ -1,7 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+
+// --- Security: Rate limiting ---
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 60_000; // 1 minute
+
+function useRateLimiter() {
+  const attemptsRef = useRef<number[]>([]);
+
+  const canAttempt = useCallback(() => {
+    const now = Date.now();
+    // Remove attempts older than lockout window
+    attemptsRef.current = attemptsRef.current.filter(
+      (t) => now - t < LOCKOUT_DURATION_MS
+    );
+    return attemptsRef.current.length < MAX_ATTEMPTS;
+  }, []);
+
+  const recordAttempt = useCallback(() => {
+    attemptsRef.current.push(Date.now());
+  }, []);
+
+  const getSecondsRemaining = useCallback(() => {
+    if (attemptsRef.current.length === 0) return 0;
+    const oldest = attemptsRef.current[0];
+    const elapsed = Date.now() - oldest;
+    return Math.max(0, Math.ceil((LOCKOUT_DURATION_MS - elapsed) / 1000));
+  }, []);
+
+  return { canAttempt, recordAttempt, getSecondsRemaining };
+}
+
+// --- Security: Input sanitization ---
+function sanitizeInput(value: string, maxLength: number): string {
+  return value.replace(/[<>"'&]/g, '').trim().slice(0, maxLength);
+}
+
+function validateEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 255;
+}
+
+function validatePassword(password: string): string | null {
+  if (password.length < 8) return 'A senha deve ter pelo menos 8 caracteres';
+  if (password.length > 128) return 'A senha é muito longa';
+  if (!/[A-Z]/.test(password)) return 'A senha deve conter pelo menos uma letra maiúscula';
+  if (!/[a-z]/.test(password)) return 'A senha deve conter pelo menos uma letra minúscula';
+  if (!/[0-9]/.test(password)) return 'A senha deve conter pelo menos um número';
+  return null;
+}
+
+// --- Security: Sanitize error messages (never leak backend details) ---
+function getSafeErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    const msg = err.message.toLowerCase();
+    if (msg.includes('invalid login')) return 'Email ou senha incorretos';
+    if (msg.includes('email not confirmed')) return 'Confirme seu email antes de entrar';
+    if (msg.includes('user already registered')) return 'Este email já está cadastrado';
+    if (msg.includes('signup is disabled')) return 'Cadastro temporariamente indisponível';
+    if (msg.includes('rate limit') || msg.includes('too many')) return 'Muitas tentativas. Aguarde um momento.';
+    if (msg.includes('password') && msg.includes('leak')) return 'Esta senha foi encontrada em vazamentos de dados. Escolha outra.';
+  }
+  return 'Erro ao autenticar. Tente novamente.';
+}
 
 const Auth: React.FC = () => {
   const { user, loading } = useAuth();
@@ -12,6 +74,8 @@ const Auth: React.FC = () => {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
+
+  const rateLimiter = useRateLimiter();
 
   if (loading) {
     return (
@@ -26,31 +90,59 @@ const Auth: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Rate limiting check
+    if (!rateLimiter.canAttempt()) {
+      const secs = rateLimiter.getSecondsRemaining();
+      setError(`Muitas tentativas. Aguarde ${secs}s antes de tentar novamente.`);
+      return;
+    }
+
+    // Validate email
+    const cleanEmail = sanitizeInput(email, 255).toLowerCase();
+    if (!validateEmail(cleanEmail)) {
+      setError('Informe um email válido');
+      return;
+    }
+
+    // Validate password
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    // Validate display name for signup
+    const cleanName = sanitizeInput(displayName, 100);
+    if (!isLogin && cleanName.length < 2) {
+      setError('Informe seu nome (mínimo 2 caracteres)');
+      return;
+    }
+
     setSubmitting(true);
+    rateLimiter.recordAttempt();
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
         if (error) throw error;
       } else {
-        if (!displayName.trim()) {
-          setError('Informe seu nome');
-          setSubmitting(false);
-          return;
-        }
         const { error } = await supabase.auth.signUp({
-          email,
+          email: cleanEmail,
           password,
           options: {
-            data: { display_name: displayName.trim() },
+            data: { display_name: cleanName },
             emailRedirectTo: window.location.origin,
           },
         });
         if (error) throw error;
         setSignupSuccess(true);
       }
-    } catch (err: any) {
-      setError(err.message || 'Erro ao autenticar');
+    } catch (err: unknown) {
+      setError(getSafeErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -63,7 +155,7 @@ const Auth: React.FC = () => {
           <div className="text-4xl">📧</div>
           <h2 className="text-xl font-bold text-foreground">Verifique seu email</h2>
           <p className="text-sm text-muted-foreground">
-            Enviamos um link de confirmação para <span className="font-semibold text-foreground">{email}</span>.
+            Enviamos um link de confirmação para seu email.
             Clique no link para ativar sua conta.
           </p>
           <button
@@ -90,7 +182,7 @@ const Auth: React.FC = () => {
             {isLogin ? 'Entrar' : 'Criar Conta'}
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
             {!isLogin && (
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground mb-1">Nome</label>
@@ -101,6 +193,7 @@ const Auth: React.FC = () => {
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                   placeholder="Seu nome"
                   maxLength={100}
+                  autoComplete="off"
                 />
               </div>
             )}
@@ -114,6 +207,8 @@ const Auth: React.FC = () => {
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 placeholder="seu@email.com"
                 required
+                maxLength={255}
+                autoComplete="off"
               />
             </div>
 
@@ -126,8 +221,15 @@ const Auth: React.FC = () => {
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 placeholder="••••••••"
                 required
-                minLength={6}
+                minLength={8}
+                maxLength={128}
+                autoComplete="new-password"
               />
+              {!isLogin && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Mínimo 8 caracteres, com maiúscula, minúscula e número
+                </p>
+              )}
             </div>
 
             {error && (
