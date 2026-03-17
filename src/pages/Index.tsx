@@ -4,6 +4,7 @@ import ControlPanel, { type ViewMode, DEGREE_PALETTES, NOTE_PALETTES, FUNCTION_P
 import ChordGeneratorView from '@/components/ChordGeneratorView';
 import ProgressionGeneratorView from '@/components/ProgressionGeneratorView';
 import HarmonicFieldView from '@/components/HarmonicFieldView';
+import ScaleInfoPanel from '@/components/ScaleInfoPanel';
 import {
   getScale,
   getHarmonicField,
