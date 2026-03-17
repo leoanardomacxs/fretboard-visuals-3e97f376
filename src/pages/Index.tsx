@@ -102,6 +102,7 @@ const Index: React.FC = () => {
               <TensionLegend />
             )}
             <DegreeLegend />
+            <ScaleInfoPanel root={root} scaleType={scaleType} />
           </div>
         );
 
