@@ -98,8 +98,7 @@ const GuitarFretboard: React.FC<GuitarFretboardProps> = ({
   };
 
   const getLabel = (note: FretNote): string => {
-    if (showNoteNames && showDegrees && note.degree) return `${note.note}\n${note.degree}`;
-    if (showDegrees && note.degree) return `${note.degree}`;
+    if (showNoteNames && showDegrees && note.interval) return `${note.note}\n${note.interval}`;
     if (showDegrees && note.interval) return note.interval;
     return note.note;
   };
