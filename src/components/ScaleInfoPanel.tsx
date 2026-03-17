@@ -6,42 +6,56 @@ interface ScaleInfoPanelProps {
   scaleType: string;
 }
 
-// Mode degree positions (which degree of the major scale each mode starts on)
-const MODE_DEGREES: Record<string, { degree: number; label: string; ordinal: string }> = {
-  'Jônio':     { degree: 1, label: 'primeiro', ordinal: '1º' },
-  'Dórico':    { degree: 2, label: 'segundo',  ordinal: '2º' },
-  'Frígio':    { degree: 3, label: 'terceiro', ordinal: '3º' },
-  'Lídio':     { degree: 4, label: 'quarto',   ordinal: '4º' },
-  'Mixolídio': { degree: 5, label: 'quinto',   ordinal: '5º' },
-  'Eólio':     { degree: 6, label: 'sexto',    ordinal: '6º' },
-  'Lócrio':    { degree: 7, label: 'sétimo',   ordinal: '7º' },
+const MODE_DEGREES: Record<string, { degree: number; label: string; ordinal: string; quality: string; feeling: string }> = {
+  'Jônio':     { degree: 1, label: 'primeiro', ordinal: '1º', quality: 'Maior', feeling: 'Estável, feliz, natural.' },
+  'Dórico':    { degree: 2, label: 'segundo',  ordinal: '2º', quality: 'Menor', feeling: 'Menor, mas com energia e esperança.' },
+  'Frígio':    { degree: 3, label: 'terceiro', ordinal: '3º', quality: 'Menor', feeling: 'Som espanhol, tenso e sombrio.' },
+  'Lídio':     { degree: 4, label: 'quarto',   ordinal: '4º', quality: 'Maior', feeling: 'Brilhante, aberto, meio "mágico".' },
+  'Mixolídio': { degree: 5, label: 'quinto',   ordinal: '5º', quality: 'Maior', feeling: 'Bluesy, relaxado, típico do rock e blues.' },
+  'Eólio':     { degree: 6, label: 'sexto',    ordinal: '6º', quality: 'Menor', feeling: 'Melancólico, triste, dramático.' },
+  'Lócrio':    { degree: 7, label: 'sétimo',   ordinal: '7º', quality: 'Menor (instável)', feeling: 'Tenso, estranho, instável.' },
 };
 
-// Semitones to go back from the mode root to find the parent major key
-// If mode starts on degree N of major scale, parent root = root - MAJOR_FORMULA[N-1] semitones
+const SCALE_FEELINGS: Record<string, string> = {
+  'Maior': 'Feliz, clara, estável, luminosa.',
+  'Menor Natural': 'Triste, melancólica, introspectiva.',
+  'Menor Harmônica': 'Dramática, intensa, exótica, meio oriental.',
+  'Menor Melódica': 'Sofisticada, suave, levemente tensa, muito usada no jazz.',
+};
+
 const MAJOR_FORMULA = [0, 2, 4, 5, 7, 9, 11];
 
+// Always prefer flats for parent key names (Bb instead of A#, Ab instead of G#, etc.)
 function getParentMajorKey(root: string, modeDegree: number): string {
   const rootSemi = getNoteIndex(root);
   const interval = MAJOR_FORMULA[modeDegree - 1];
   const parentSemi = ((rootSemi - interval) % 12 + 12) % 12;
-  const flats = useFlats(root);
-  return getNoteName(parentSemi, flats);
+  // Always use flats for more intuitive naming
+  return getNoteName(parentSemi, true);
 }
 
 function getRelativeMinor(root: string): string {
   const semi = getNoteIndex(root);
-  const minorSemi = ((semi + 9) % 12); // 6th degree = -3 semitones
-  const flats = useFlats(root);
-  return getNoteName(minorSemi, flats);
+  const minorSemi = ((semi + 9) % 12);
+  return getNoteName(minorSemi, useFlats(root));
 }
 
 function getRelativeMajor(root: string): string {
   const semi = getNoteIndex(root);
   const majorSemi = ((semi + 3) % 12);
-  const flats = useFlats(root);
-  return getNoteName(majorSemi, flats);
+  return getNoteName(majorSemi, useFlats(root));
 }
+
+const FeelingBadge: React.FC<{ quality?: string; feeling: string }> = ({ quality, feeling }) => (
+  <div className="flex items-center gap-2 flex-wrap">
+    {quality && (
+      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+        {quality}
+      </span>
+    )}
+    <span className="text-xs italic text-muted-foreground">Sensação: {feeling}</span>
+  </div>
+);
 
 const ScaleInfoPanel: React.FC<ScaleInfoPanelProps> = ({ root, scaleType }) => {
   const isGreekMode = !!MODE_DEGREES[scaleType];
@@ -53,9 +67,8 @@ const ScaleInfoPanel: React.FC<ScaleInfoPanelProps> = ({ root, scaleType }) => {
   const isHarmonicMinor = scaleType === 'Menor Harmônica';
   const isMelodicMinor = scaleType === 'Menor Melódica';
 
-  // Greek modes info
   if (isGreekMode) {
-    const { degree, label, ordinal } = MODE_DEGREES[scaleType];
+    const { degree, label, ordinal, quality, feeling } = MODE_DEGREES[scaleType];
     const parentKey = getParentMajorKey(root, degree);
     const parentScale = spellScale(parentKey, 'Maior');
     const modeScale = spellScale(root, scaleType);
@@ -67,6 +80,8 @@ const ScaleInfoPanel: React.FC<ScaleInfoPanelProps> = ({ root, scaleType }) => {
           <span className="text-xs text-muted-foreground">•</span>
           <span className="text-sm font-bold text-foreground">{root} {scaleType}</span>
         </div>
+
+        <FeelingBadge quality={quality} feeling={feeling} />
 
         <p className="text-sm text-muted-foreground">
           É a escala maior onde <span className="font-bold text-foreground">{root}</span> é o{' '}
@@ -105,19 +120,21 @@ const ScaleInfoPanel: React.FC<ScaleInfoPanelProps> = ({ root, scaleType }) => {
     );
   }
 
-  // Major and minor relative keys
   if (isMajor || isMinorNatural || isHarmonicMinor || isMelodicMinor) {
     const isMajorType = isMajor;
     const relativeName = isMajorType ? getRelativeMinor(root) : getRelativeMajor(root);
     const relativeType = isMajorType ? 'Menor Natural' : 'Maior';
     const relativeLabel = isMajorType ? `${relativeName}m` : `${relativeName}`;
     const relativeScale = spellScale(relativeName, relativeType);
+    const feeling = SCALE_FEELINGS[scaleType] || '';
 
     return (
       <div className="bg-card border border-border rounded-lg p-4 mt-4 space-y-3">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-primary">Informações da Escala</span>
         </div>
+
+        {feeling && <FeelingBadge feeling={feeling} />}
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -224,7 +241,6 @@ const ScaleInfoPanel: React.FC<ScaleInfoPanelProps> = ({ root, scaleType }) => {
     );
   }
 
-  // Blues
   if (isBlues) {
     return (
       <div className="bg-card border border-border rounded-lg p-4 mt-4 space-y-3">
