@@ -123,6 +123,7 @@ const Index: React.FC = () => {
               />
             </div>
             <IntervalLegend root={root} scaleType={scaleType} />
+            <ScaleInfoPanel root={root} scaleType={scaleType} />
           </div>
         );
 
