@@ -122,14 +122,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   noteSize, setNoteSize,
   show24Frets, setShow24Frets,
 }) => {
+  const { instrument } = useInstrument();
+  const isBass = instrument === 'bass';
+  const instrumentLabel = instrument === 'bass' ? 'Bass Theory' : instrument === 'piano' ? 'Piano Theory' : 'Guitar Theory';
+  const instrumentSubtitle = instrument === 'bass' ? 'Estudo de Baixo' : instrument === 'piano' ? 'Estudo de Piano' : 'Estudo Visual Interativo';
+
   return (
     <aside className="w-72 shrink-0 h-screen overflow-y-auto bg-card border-r border-border p-4 space-y-5 scrollbar-thin">
       {/* Header */}
       <div className="flex items-center gap-2 pb-3 border-b border-border">
-        <span className="text-2xl font-bold">GT</span>
+        <span className="text-2xl font-bold">{instrument === 'bass' ? 'BT' : instrument === 'piano' ? 'PT' : 'GT'}</span>
         <div>
-          <h1 className="text-base font-bold text-foreground leading-tight">Guitar Theory</h1>
-          <p className="text-xs text-muted-foreground">Estudo Visual Interativo</p>
+          <h1 className="text-base font-bold text-foreground leading-tight">{instrumentLabel}</h1>
+          <p className="text-xs text-muted-foreground">{instrumentSubtitle}</p>
         </div>
       </div>
 
