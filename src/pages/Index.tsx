@@ -461,9 +461,12 @@ const Index: React.FC = () => {
         show24Frets={show24Frets} setShow24Frets={setShow24Frets}
       />
       <main ref={mainRef} className="flex-1 overflow-y-auto p-6 scrollbar-thin">
-        {/* Export buttons */}
-        <div className="flex items-center gap-2 mb-4 justify-end">
-          <span className="text-[9px] text-muted-foreground/60 italic mr-auto">Clique nas notas no braço para ouvir. Use os controles na barra lateral para explorar escalas, acordes e mais.</span>
+        {/* Top bar with instrument switcher and export */}
+        <div className="flex items-center gap-2 mb-4">
+          <InstrumentSwitcher />
+          <span className="text-[9px] text-muted-foreground/60 italic ml-2 mr-auto">
+            {instrument === 'piano' ? 'Clique nas teclas para ouvir.' : 'Clique nas notas no braço para ouvir.'} Use os controles na barra lateral.
+          </span>
           <button
             onClick={() => handleExport('svg')}
             className="px-3 py-1.5 text-xs font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
