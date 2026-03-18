@@ -79,7 +79,27 @@ const Index: React.FC = () => {
     }
   }, [colorMode, colorVariant]);
 
-  const scaleNotes = useMemo(() => filterByScale(allFretNotes, root, scaleType), [root, scaleType]);
+  const currentFretNotes = instrument === 'bass' ? allBassFretNotes : allFretNotes;
+  const scaleNotes = useMemo(() => filterByScale(currentFretNotes, root, scaleType), [root, scaleType, currentFretNotes]);
+
+  // Piano: generate highlighted notes for the keyboard
+  const pianoScaleNotes = useMemo(() => {
+    const scale = getScale(root, scaleType);
+    return scale.map((note, i) => ({
+      note,
+      degree: i + 1,
+      interval: (() => {
+        const formula = SCALE_FORMULAS[scaleType];
+        if (!formula) return '';
+        const intervalNames: Record<number, string> = {
+          0: '1', 1: 'b2', 2: '2', 3: 'b3', 4: '3', 5: '4',
+          6: 'b5', 7: '5', 8: 'b6', 9: '6', 10: 'b7', 11: '7',
+        };
+        return intervalNames[formula[i]] || '';
+      })(),
+      isRoot: i === 0,
+    }));
+  }, [root, scaleType]);
 
   const getShowNotes = (): boolean => ['full', 'notes', 'notes-degrees', 'chord', 'improvisation', 'tensions'].includes(viewMode);
   const getShowDegrees = (): boolean => ['degrees', 'notes-degrees', 'intervals', 'tensions'].includes(viewMode);
