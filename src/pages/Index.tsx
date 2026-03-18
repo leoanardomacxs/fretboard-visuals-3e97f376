@@ -33,6 +33,7 @@ const allFretNotes = getFretboardNotes(24);
 const allBassFretNotes = getBassFretboardNotes(24);
 
 const Index: React.FC = () => {
+  const { instrument } = useInstrument();
   const [root, setRoot] = useState('C');
   const [scaleType, setScaleType] = useState('Maior');
   const [viewMode, setViewMode] = useState<ViewMode>('full');
