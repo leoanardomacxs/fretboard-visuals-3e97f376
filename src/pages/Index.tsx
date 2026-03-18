@@ -9,6 +9,7 @@ import HarmonicFieldView from '@/components/HarmonicFieldView';
 import ScaleInfoPanel from '@/components/ScaleInfoPanel';
 import InstrumentSwitcher from '@/components/InstrumentSwitcher';
 import { useInstrument } from '@/contexts/InstrumentContext';
+import { updateAudioSettings } from '@/lib/audioEngine';
 import {
   getScale,
   getHarmonicField,
