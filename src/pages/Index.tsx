@@ -11,7 +11,7 @@ import InstrumentSwitcher from '@/components/InstrumentSwitcher';
 import { useInstrument } from '@/contexts/InstrumentContext';
 import { updateAudioSettings } from '@/lib/audioEngine';
 import PianoChordGenerator from '@/components/PianoChordGenerator';
-import UkuleleFretboard from '@/components/ukuleleFretboard';
+import UkuleleFretboard from '@/components/Ukulelecasas';
 import { getUkuleleFretboardNotes } from '@/lib/musicTheory';
 import {
   getScale,
