@@ -380,7 +380,19 @@ export function getFretboardNotes(maxFret = 24): FretNote[] {
   for (let s = 0; s < 6; s++) {
     for (let f = 0; f <= maxFret; f++) {
       const midi = STANDARD_TUNING[s] + f;
-      const note = getNoteName(midi, false); // raw name, will be respelled in context
+      const note = getNoteName(midi, false);
+      notes.push({ string: s, fret: f, note, midi });
+    }
+  }
+  return notes;
+}
+
+export function getBassFretboardNotes(maxFret = 24): FretNote[] {
+  const notes: FretNote[] = [];
+  for (let s = 0; s < 4; s++) {
+    for (let f = 0; f <= maxFret; f++) {
+      const midi = BASS_TUNING[s] + f;
+      const note = getNoteName(midi, false);
       notes.push({ string: s, fret: f, note, midi });
     }
   }
