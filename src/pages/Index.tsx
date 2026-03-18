@@ -58,6 +58,14 @@ const Index: React.FC = () => {
     }
   }, [viewMode, harmonicField, selectedChord]);
 
+  // Auto-switch timbre when changing instrument
+  useEffect(() => {
+    const { updateAudioSettings } = require('@/lib/audioEngine');
+    if (instrument === 'bass') updateAudioSettings({ timbre: 'bass' });
+    else if (instrument === 'piano') updateAudioSettings({ timbre: 'piano' });
+    else updateAudioSettings({ timbre: 'guitar' });
+  }, [instrument]);
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
