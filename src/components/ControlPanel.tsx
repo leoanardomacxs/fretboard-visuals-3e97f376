@@ -191,50 +191,53 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         )}
       </Section>
 
-      {/* Gerador de Acordes — botão exclusivo */}
-      <div>
-        <button
-          onClick={() => { playClick(500); setViewMode('chord-generator'); }}
-          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-            viewMode === 'chord-generator'
-              ? 'bg-primary text-primary-foreground shadow-md'
-              : 'bg-secondary text-foreground hover:bg-secondary/80'
-          }`}
-        >
-          Gerador de Acordes
-        </button>
-        
-      </div>
+      {/* Gerador de Acordes — botão exclusivo (hidden for bass) */}
+      {!isBass && (
+        <div>
+          <button
+            onClick={() => { playClick(500); setViewMode('chord-generator'); }}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              viewMode === 'chord-generator'
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'bg-secondary text-foreground hover:bg-secondary/80'
+            }`}
+          >
+            Gerador de Acordes
+          </button>
+        </div>
+      )}
 
       {/* Progressões — botão exclusivo */}
-      <div>
-        <button
-          onClick={() => { playClick(500); setViewMode('progressions'); }}
-          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-            viewMode === 'progressions'
-              ? 'bg-primary text-primary-foreground shadow-md'
-              : 'bg-secondary text-foreground hover:bg-secondary/80'
-          }`}
-        >
-          Progressões
-        </button>
-        
-      </div>
+      {!isBass && (
+        <div>
+          <button
+            onClick={() => { playClick(500); setViewMode('progressions'); }}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              viewMode === 'progressions'
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'bg-secondary text-foreground hover:bg-secondary/80'
+            }`}
+          >
+            Progressões
+          </button>
+        </div>
+      )}
 
       {/* Campo Harmônico — botão exclusivo */}
-      <div>
-        <button
-          onClick={() => { playClick(500); setViewMode('harmonic-field-view'); }}
-          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-            viewMode === 'harmonic-field-view'
-              ? 'bg-primary text-primary-foreground shadow-md'
-              : 'bg-secondary text-foreground hover:bg-secondary/80'
-          }`}
-        >
-          Campo Harmônico
-        </button>
-        
-      </div>
+      {!isBass && (
+        <div>
+          <button
+            onClick={() => { playClick(500); setViewMode('harmonic-field-view'); }}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              viewMode === 'harmonic-field-view'
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'bg-secondary text-foreground hover:bg-secondary/80'
+            }`}
+          >
+            Campo Harmônico
+          </button>
+        </div>
+      )}
 
       {/* Escala */}
       <Section title="Escala" collapsible defaultOpen={false}>
