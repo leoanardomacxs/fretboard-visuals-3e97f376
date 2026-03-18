@@ -263,13 +263,17 @@ const Index: React.FC = () => {
   const renderChordView = () => {
     if (!selectedChord) return null;
     const flats = useFlats(root);
-    const chordNotes = filterByNotes(allFretNotes, selectedChord.notes, selectedChord.root);
+    const chordNotes = filterByNotes(currentFretNotes, selectedChord.notes, selectedChord.root);
     const arpNotes = showArpeggio
-      ? filterByNotes(allFretNotes, getArpeggio(selectedChord.root, selectedChord.quality, flats), selectedChord.root)
+      ? filterByNotes(currentFretNotes, getArpeggio(selectedChord.root, selectedChord.quality, flats), selectedChord.root)
       : [];
     const pentNotes = showPentatonic
-      ? filterByScale(allFretNotes, selectedChord.root, selectedChord.quality === 'minor' || selectedChord.quality === 'diminished' ? 'Pentatônica Menor' : 'Pentatônica Maior')
+      ? filterByScale(currentFretNotes, selectedChord.root, selectedChord.quality === 'minor' || selectedChord.quality === 'diminished' ? 'Pentatônica Menor' : 'Pentatônica Maior')
       : [];
+
+    const chordPianoNotes = selectedChord.notes.map((note, i) => ({
+      note, degree: i === 0 ? 1 : undefined, isRoot: i === 0,
+    }));
 
     return (
       <div className="space-y-6">
@@ -278,54 +282,20 @@ const Index: React.FC = () => {
           subtitle={`Notas: ${selectedChord.notes.join(' – ')}`}
         />
         <div className="overflow-x-auto pb-2">
-          <GuitarFretboard
-            notes={chordNotes}
-            maxFret={currentMaxFret}
-            showNoteNames={true}
-            colorMode={colorMode}
-            colorVariant={colorVariant}
-            noteRadius={noteSize}
-            title={`Acorde ${selectedChord.name}`}
-            subtitle={`Notas: ${selectedChord.notes.join(' ')}`}
-          />
+          {renderInstrument({ notes: chordNotes, showNoteNames: true, title: `Acorde ${selectedChord.name}`, subtitle: `Notas: ${selectedChord.notes.join(' ')}`, pianoNotes: chordPianoNotes as any })}
         </div>
         {showArpeggio && (
           <div className="overflow-x-auto pb-2">
-            <GuitarFretboard
-              notes={arpNotes}
-              maxFret={currentMaxFret}
-              showNoteNames={true}
-              colorMode={colorMode}
-              colorVariant={colorVariant}
-              noteRadius={noteSize}
-              title={`Arpejo de ${selectedChord.name}`}
-            />
+            {renderInstrument({ notes: arpNotes, showNoteNames: true, title: `Arpejo de ${selectedChord.name}` })}
           </div>
         )}
         {showPentatonic && (
           <div className="overflow-x-auto pb-2">
-            <GuitarFretboard
-              notes={pentNotes}
-              maxFret={currentMaxFret}
-              showNoteNames={true}
-              showDegrees={true}
-              colorMode={colorMode}
-              colorVariant={colorVariant}
-              noteRadius={noteSize}
-              title={`Pentatônica de ${selectedChord.root}`}
-            />
+            {renderInstrument({ notes: pentNotes, showNoteNames: true, showDegrees: true, title: `Pentatônica de ${selectedChord.root}` })}
           </div>
         )}
         <div className="overflow-x-auto pb-2">
-          <GuitarFretboard
-            notes={scaleNotes}
-            maxFret={currentMaxFret}
-            showNoteNames={true}
-            colorMode={colorMode}
-            colorVariant={colorVariant}
-            noteRadius={noteSize * 0.85}
-            title={`Escala do Tom (${root} ${scaleType})`}
-          />
+          {renderInstrument({ notes: scaleNotes, showNoteNames: true, noteRadius: noteSize * 0.85, title: `Escala do Tom (${root} ${scaleType})` })}
         </div>
       </div>
     );
