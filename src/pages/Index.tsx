@@ -330,21 +330,15 @@ const Index: React.FC = () => {
             else if (ch.quality === 'augmented') scType = 'Maior';
             else scType = 'Maior';
           }
-          const notes = filterByScale(allFretNotes, ch.root, scType);
+          const notes = filterByScale(currentFretNotes, ch.root, scType);
           const displayLabel = isPentatonic ? scType : `${ch.name} (${ch.quality})`;
           return (
             <div key={ch.name} className="overflow-x-auto pb-2">
-              <GuitarFretboard
-                notes={notes}
-                maxFret={currentMaxFret}
-                showNoteNames={true}
-                showDegrees={true}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                noteRadius={noteSize * 0.9}
-                title={`${ch.romanNumeral} — ${isPentatonic ? `${ch.root} ${scType}` : ch.name}`}
-                subtitle={`Notas: ${getScale(ch.root, scType).join(' – ')}`}
-              />
+              {renderInstrument({
+                notes, showNoteNames: true, showDegrees: true, noteRadius: noteSize * 0.9,
+                title: `${ch.romanNumeral} — ${isPentatonic ? `${ch.root} ${scType}` : ch.name}`,
+                subtitle: `Notas: ${getScale(ch.root, scType).join(' – ')}`,
+              })}
             </div>
           );
         })}
@@ -358,19 +352,13 @@ const Index: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
         {harmonicField.map(ch => {
           const scType = ch.quality === 'Major' ? 'Maior' : ch.quality === 'minor' ? 'Menor Natural' : 'Lócrio';
-          const notes = filterByScale(allFretNotes, ch.root, scType);
+          const notes = filterByScale(currentFretNotes, ch.root, scType);
           return (
             <div key={ch.name} className="bg-card rounded-lg border border-border p-3 panel-shadow overflow-x-auto">
-              <GuitarFretboard
-                notes={notes}
-                maxFret={12}
-                showNoteNames={true}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                compact={true}
-                noteRadius={noteSize * 0.7}
-                title={`${ch.romanNumeral} — ${ch.name}`}
-              />
+              {renderInstrument({
+                notes, showNoteNames: true, compact: true, noteRadius: noteSize * 0.7, maxFret: 12,
+                title: `${ch.romanNumeral} — ${ch.name}`,
+              })}
             </div>
           );
         })}
@@ -380,25 +368,18 @@ const Index: React.FC = () => {
 
   const renderComparePentatonicsView = () => {
     const scale = getScale(root, 'Maior');
-    const colors = ['#e74c3c', '#3498db', '#2ecc71', '#e67e22', '#9b59b6', '#1abc9c', '#e91e63'];
     return (
       <div className="space-y-4">
         <ViewHeader title={`Pentatônicas do Campo de ${root}`} subtitle="Comparação visual" />
         {scale.map((note, i) => {
           const quality = [0, 3, 4].includes(i) ? 'Pentatônica Maior' : 'Pentatônica Menor';
-          const notes = filterByScale(allFretNotes, note, quality);
+          const notes = filterByScale(currentFretNotes, note, quality);
           return (
             <div key={note} className="overflow-x-auto pb-2">
-              <GuitarFretboard
-                notes={notes}
-                maxFret={currentMaxFret}
-                showNoteNames={true}
-                showDegrees={true}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                noteRadius={noteSize * 0.9}
-                title={`${note} ${quality}`}
-              />
+              {renderInstrument({
+                notes, showNoteNames: true, showDegrees: true, noteRadius: noteSize * 0.9,
+                title: `${note} ${quality}`,
+              })}
             </div>
           );
         })}
@@ -408,10 +389,9 @@ const Index: React.FC = () => {
 
   const renderImprovisationView = () => {
     if (!selectedChord) return null;
-    const chordNotes = filterByNotes(allFretNotes, selectedChord.notes, selectedChord.root);
+    const chordNotes = filterByNotes(currentFretNotes, selectedChord.notes, selectedChord.root);
     const pentNotes = filterByScale(
-      allFretNotes,
-      selectedChord.root,
+      currentFretNotes, selectedChord.root,
       selectedChord.quality === 'minor' || selectedChord.quality === 'diminished' ? 'Pentatônica Menor' : 'Pentatônica Maior'
     );
     return (
@@ -425,39 +405,13 @@ const Index: React.FC = () => {
           <InfoCard title="Escala Recomendada" items={getScale(root, scaleType)} color="hsl(var(--degree-5))" />
         </div>
         <div className="overflow-x-auto pb-2">
-          <GuitarFretboard
-            notes={chordNotes}
-            maxFret={currentMaxFret}
-            showNoteNames={true}
-            colorMode={colorMode}
-            colorVariant={colorVariant}
-            noteRadius={noteSize}
-            title={`Notas Alvo — ${selectedChord.name}`}
-            subtitle="Chord tones"
-          />
+          {renderInstrument({ notes: chordNotes, showNoteNames: true, title: `Notas Alvo — ${selectedChord.name}`, subtitle: 'Chord tones' })}
         </div>
         <div className="overflow-x-auto pb-2">
-          <GuitarFretboard
-            notes={pentNotes}
-            maxFret={currentMaxFret}
-            showNoteNames={true}
-            showDegrees={true}
-            colorMode={colorMode}
-            colorVariant={colorVariant}
-            noteRadius={noteSize}
-            title={`Pentatônica — ${selectedChord.root}`}
-          />
+          {renderInstrument({ notes: pentNotes, showNoteNames: true, showDegrees: true, title: `Pentatônica — ${selectedChord.root}` })}
         </div>
         <div className="overflow-x-auto pb-2">
-          <GuitarFretboard
-            notes={scaleNotes}
-            maxFret={currentMaxFret}
-            showNoteNames={true}
-            colorMode={colorMode}
-            colorVariant={colorVariant}
-            noteRadius={noteSize * 0.85}
-            title={`Escala Completa — ${root} ${scaleType}`}
-          />
+          {renderInstrument({ notes: scaleNotes, showNoteNames: true, noteRadius: noteSize * 0.85, title: `Escala Completa — ${root} ${scaleType}` })}
         </div>
       </div>
     );
