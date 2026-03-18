@@ -253,14 +253,7 @@ const Index: React.FC = () => {
           <div className="space-y-4">
             <ViewHeader title={`${root} ${scaleType}`} />
             <div className="overflow-x-auto pb-4">
-              <GuitarFretboard
-                notes={scaleNotes}
-                maxFret={currentMaxFret}
-                showNoteNames={true}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                noteRadius={noteSize}
-              />
+              {renderInstrument({ notes: scaleNotes, showNoteNames: true, title: `${root} ${scaleType}` })}
             </div>
           </div>
         );
