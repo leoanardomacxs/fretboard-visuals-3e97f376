@@ -5,7 +5,9 @@
 @tailwind utilities;
 
 @layer base {
+
   :root {
+
     --background: 220 20% 97%;
     --foreground: 220 25% 10%;
 
@@ -35,7 +37,7 @@
     --ring: 220 70% 50%;
     --radius: 0.75rem;
 
-    /* Guitar degree colors */
+    /* GUITAR DEGREE COLORS (mantidas) */
     --degree-1: 0 75% 55%;
     --degree-2: 210 75% 55%;
     --degree-3: 145 65% 42%;
@@ -44,7 +46,7 @@
     --degree-6: 270 60% 55%;
     --degree-7: 220 20% 25%;
 
-    /* Fretboard colors — minimalist */
+    /* Fretboard */
     --fretboard-bg: 220 10% 90%;
     --fretboard-fret: 220 10% 70%;
     --fretboard-string: 220 10% 55%;
@@ -65,7 +67,34 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
+
+  /* 🎹 PIANO THEME */
+.piano-theme {
+
+  /* cores mais suaves e menos neon */
+  --degree-1: 255 85% 60%;
+  --degree-2: 200 70% 58%;
+  --degree-3: 150 55% 48%;
+  --degree-4: 45 90% 58%;
+  --degree-5: 18 80% 56%;
+  --degree-6: 300 60% 58%;
+  --degree-7: 220 10% 65%;
+
+}
+
+/* teclas brancas */
+.piano-theme svg rect[fill="url(#whiteGrad)"] {
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,.18));
+}
+
+/* teclas pretas */
+.piano-theme svg rect[fill="url(#blackGrad)"] {
+  filter: drop-shadow(0 6px 8px rgba(0,0,0,.45));
+}
+
+
   .dark {
+
     --background: 220 20% 8%;
     --foreground: 220 15% 90%;
 
@@ -94,6 +123,7 @@
     --input: 220 15% 20%;
     --ring: 220 70% 60%;
 
+    /* Guitar dark */
     --degree-1: 0 70% 60%;
     --degree-2: 210 70% 62%;
     --degree-3: 145 60% 50%;
@@ -110,49 +140,48 @@
 
     --panel-bg: 220 20% 12%;
     --panel-border: 220 15% 20%;
-
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+
+  /* 🎹 Piano Dark Theme */
+.dark .piano-theme {
+
+  --degree-1: 255 90% 68%;
+  --degree-2: 200 75% 64%;
+  --degree-3: 150 60% 55%;
+  --degree-4: 45 95% 65%;
+  --degree-5: 18 85% 63%;
+  --degree-6: 300 65% 66%;
+  --degree-7: 220 8% 58%;
+
 }
 
-@layer base {
+
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, sans-serif;
   }
+
   code, .mono {
     font-family: 'JetBrains Mono', monospace;
   }
+
 }
 
 @layer utilities {
+
   .guitar-note-shadow {
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
   }
+
   .panel-shadow {
     box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
   }
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.3);
-    border-radius: 3px;
-  }
+
 }
 
 @keyframes noteAppear {

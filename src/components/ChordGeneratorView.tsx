@@ -12,9 +12,24 @@ const INTERVAL_NAMES: Record<number, string> = {
   9: '6ª maior', 10: '7ª menor', 11: '7ª maior', 14: '9ª maior',
 };
 
+const INSTRUMENT_CONFIG = {
+  guitar: {
+    tuning: ['E', 'A', 'D', 'G', 'B', 'E'],
+    strings: 6,
+    frets: 22,
+  },
+  ukulele: {
+    tuning: ['G', 'C', 'E', 'A'],
+    strings: 4,
+    frets: 15,
+  }
+};
+
+
 interface ChordGeneratorViewProps {
   root: string;
   setRoot: (r: string) => void;
+  instrument: 'guitar';
 }
 
 const TRIAD_TYPES = ['major', 'minor', 'dim', 'aug', 'sus2', 'sus4'];
@@ -29,7 +44,7 @@ const TYPE_DISPLAY: Record<string, string> = {
   'all': 'Todos',
 };
 
-const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot }) => {
+const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot, instrument }) => {
   const [selectedType, setSelectedType] = useState('major');
   const [rootOpen, setRootOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);

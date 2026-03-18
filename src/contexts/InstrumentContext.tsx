@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-export type InstrumentType = 'guitar' | 'bass' | 'piano';
+export type InstrumentType = 'guitar' | 'piano' | 'bass' | 'ukulele';
 
 interface InstrumentContextType {
   instrument: InstrumentType;
@@ -14,7 +14,7 @@ const InstrumentContext = createContext<InstrumentContextType>({
   cycleInstrument: () => {},
 });
 
-const INSTRUMENT_ORDER: InstrumentType[] = ['guitar', 'bass', 'piano'];
+const INSTRUMENT_ORDER: InstrumentType[] = ['guitar', 'bass', 'piano', 'ukulele'];
 
 export const InstrumentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [instrument, setInstrument] = useState<InstrumentType>('guitar');

@@ -16,6 +16,7 @@ interface GuitarFretboardProps {
   noteRadius?: number;
   allowVertical?: boolean;
   colorVariant?: number;
+  disablePointer?: boolean;
 }
 
 const INLAY_FRETS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];

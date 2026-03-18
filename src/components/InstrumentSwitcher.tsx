@@ -16,16 +16,22 @@ const INSTRUMENT_CONFIG: Record<InstrumentType, { label: string; icon: React.Rea
     icon: <Guitar size={20} />,
     color: 'from-orange-500 to-amber-500',
   },
-  bass: {
-    label: 'Baixo',
-    icon: <BassIcon size={20} />,
-    color: 'from-indigo-500 to-purple-500',
-  },
   piano: {
     label: 'Piano',
     icon: <Piano size={20} />,
     color: 'from-emerald-500 to-teal-500',
   },
+  bass: {
+    label: 'Baixo',
+    icon: <BassIcon size={20} />,
+    color: 'from-indigo-500 to-purple-500',
+  },
+  
+  ukulele: {
+  label: 'Ukulele',
+  icon: <Guitar size={20} />, // pode trocar depois por outro ícone
+  color: 'from-yellow-500 to-orange-400',
+},
 };
 
 const InstrumentSwitcher: React.FC = () => {

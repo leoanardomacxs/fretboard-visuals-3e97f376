@@ -1,158 +1,252 @@
-import React, { useMemo } from 'react';
-import { playNote, noteNameToMidi } from '@/lib/audioEngine';
-import { getNoteIndex } from '@/lib/musicTheory';
+import React, { useMemo, useState, useCallback } from 'react'
+import { playNote, noteNameToMidi } from '@/lib/audioEngine'
+import { getNoteIndex } from '@/lib/musicTheory'
 
 interface PianoKeyboardProps {
-  highlightedNotes?: Array<{ note: string; degree?: number; interval?: string; isRoot?: boolean }>;
-  startOctave?: number;
-  octaves?: number;
-  colorMode?: 'degree' | 'note' | 'function';
-  title?: string;
-  subtitle?: string;
-  compact?: boolean;
+  highlightedNotes?: Array<{
+    note: string
+    degree?: number
+    interval?: string
+    function?: "tonic" | "subdominant" | "dominant"
+    isRoot?: boolean
+  }>
+  startOctave?: number
+  octaves?: number
+  colorMode?: 'degree' | 'note' | 'function'
+  colorStage?: number
+  compact?: boolean
+  themeClass?: string
 }
 
-const WHITE_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-const BLACK_NOTE_POSITIONS: Record<number, number> = {
-  1: 0, // C#: between C and D
-  3: 1, // D#: between D and E
-  6: 3, // F#: between F and G
-  8: 4, // G#: between G and A
-  10: 5, // A#: between A and B
-};
+const WHITE_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
 
-const DEGREE_COLORS: Record<number, string> = {
-  1: 'var(--degree-1)', 2: 'var(--degree-2)', 3: 'var(--degree-3)',
-  4: 'var(--degree-4)', 5: 'var(--degree-5)', 6: 'var(--degree-6)', 7: 'var(--degree-7)',
-};
+const BLACK_NOTE_POSITIONS: Record<number, number> = {
+  1: 0,
+  3: 1,
+  6: 3,
+  8: 4,
+  10: 5,
+}
+
+/* 🎯 BASE HSL (SEM string pronta → performance melhor) */
+const NOTE_HUES: Record<string, number> = {
+  C: 0,
+  "C#": 15,
+  D: 30,
+  "D#": 45,
+  E: 60,
+  F: 120,
+  "F#": 170,
+  G: 210,
+  "G#": 240,
+  A: 270,
+  "A#": 300,
+  B: 330,
+}
+
+const FUNCTION_HUES = {
+  tonic: 255,
+  subdominant: 145,
+  dominant: 18,
+}
+
+const STAGE_LIGHTNESS = [55, 68, 40] // 3 estágios reais
 
 const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
   highlightedNotes = [],
   startOctave = 3,
   octaves = 2,
-  colorMode = 'degree',
-  title,
-  subtitle,
+  colorMode = "degree",
+  colorStage = 0,
   compact = false,
+  themeClass = "",
 }) => {
+
+  const [pressedKey, setPressedKey] = useState<number | null>(null)
+
   const noteMap = useMemo(() => {
-    const map = new Map<number, typeof highlightedNotes[0]>();
+    const map = new Map<number, typeof highlightedNotes[0]>()
+
     highlightedNotes.forEach(n => {
-      map.set(getNoteIndex(n.note), n);
-    });
-    return map;
-  }, [highlightedNotes]);
+      const semi = getNoteIndex(n.note)
 
-  const whiteKeyWidth = compact ? 32 : 40;
-  const whiteKeyHeight = compact ? 120 : 160;
-  const blackKeyWidth = compact ? 20 : 26;
-  const blackKeyHeight = compact ? 75 : 100;
-  const totalWhiteKeys = octaves * 7;
-  const svgWidth = totalWhiteKeys * whiteKeyWidth + 2;
-  const headerHeight = title ? 50 : 10;
-  const svgHeight = whiteKeyHeight + headerHeight + 30;
+      for (let o = 0; o < octaves; o++) {
+        const midi = 12 * (startOctave + o + 1) + semi
+        map.set(midi, n)
+      }
+    })
 
-  const getColor = (noteInfo: typeof highlightedNotes[0]): string => {
-    if (colorMode === 'degree' && noteInfo.degree && noteInfo.degree > 0) {
-      const c = DEGREE_COLORS[noteInfo.degree];
-      return c ? `hsl(${c})` : 'hsl(220, 70%, 50%)';
+    return map
+  }, [highlightedNotes, startOctave, octaves])
+
+  const whiteKeyWidth = compact ? 34 : 48
+  const whiteKeyHeight = compact ? 130 : 180
+
+  const blackKeyWidth = whiteKeyWidth * 0.6
+  const blackKeyHeight = whiteKeyHeight * 0.62
+
+  const headerHeight = 10
+
+  const getColor = useCallback((noteInfo?: typeof highlightedNotes[0]) => {
+
+    if (!noteInfo) return ""
+
+    if (noteInfo.isRoot) return `hsl(var(--degree-1))`
+
+    const stage = STAGE_LIGHTNESS[colorStage % 3]
+
+    /* 🎯 DEGREE */
+    if (colorMode === "degree" && noteInfo.degree) {
+      return `hsl(var(--degree-${noteInfo.degree}) / ${stage / 100 + .2})`
     }
-    if (noteInfo.isRoot) return 'hsl(var(--degree-1))';
-    return 'hsl(220, 70%, 50%)';
-  };
 
-  const keys: React.ReactNode[] = [];
-  const blackKeys: React.ReactNode[] = [];
-  const labels: React.ReactNode[] = [];
+    /* 🎯 NOTE */
+    if (colorMode === "note") {
+      const hue = NOTE_HUES[noteInfo.note]
+      if (hue !== undefined)
+        return `hsl(${hue} 75% ${stage}%)`
+    }
+
+    /* 🎯 FUNCTION */
+    if (colorMode === "function" && noteInfo.function) {
+      const hue = FUNCTION_HUES[noteInfo.function]
+      return `hsl(${hue} 75% ${stage}%)`
+    }
+
+    return "hsl(220 70% 55%)"
+
+  }, [colorMode, colorStage])
+
+  const press = (midi: number) => {
+    setPressedKey(midi)
+    playNote(midi, 0.9, 0.45)
+    setTimeout(() => setPressedKey(null), 120)
+  }
+
+  const whiteKeys: React.ReactNode[] = []
+  const blackKeys: React.ReactNode[] = []
 
   for (let oct = 0; oct < octaves; oct++) {
-    const currentOctave = startOctave + oct;
+
+    const currentOctave = startOctave + oct
+
     for (let w = 0; w < 7; w++) {
-      const keyIdx = oct * 7 + w;
-      const x = keyIdx * whiteKeyWidth + 1;
-      const noteName = WHITE_NOTES[w];
-      const semi = getNoteIndex(noteName);
-      const noteInfo = noteMap.get(semi);
-      const midi = noteNameToMidi(noteName, currentOctave);
-      const isHighlighted = !!noteInfo;
 
-      keys.push(
-        <g key={`white-${keyIdx}`} className="cursor-pointer" onClick={() => playNote(midi, 0.8, 0.35)}>
-          <rect x={x} y={headerHeight} width={whiteKeyWidth - 1} height={whiteKeyHeight}
-            rx={3}
-            fill={isHighlighted ? getColor(noteInfo!) : 'hsl(var(--background))'}
-            stroke="hsl(var(--border))" strokeWidth={1}
-            className="hover:opacity-80 transition-opacity"
+      const keyIdx = oct * 7 + w
+      const x = keyIdx * whiteKeyWidth + 2
+      const noteName = WHITE_NOTES[w]
+      const midi = noteNameToMidi(noteName, currentOctave)
+
+      const noteInfo = noteMap.get(midi)
+      const isHighlighted = !!noteInfo
+      const isPressed = pressedKey === midi
+      const color = getColor(noteInfo)
+
+      whiteKeys.push(
+        <g key={`white-${keyIdx}`} onMouseDown={() => press(midi)} className="cursor-pointer">
+
+          <rect
+            x={x}
+            y={headerHeight}
+            width={whiteKeyWidth - 2}
+            height={whiteKeyHeight}
+            rx={6}
+            fill={isHighlighted ? color : "url(#whiteGrad)"}
+            stroke="rgba(0,0,0,.25)"
+            strokeWidth={1.2}
+            style={{
+              filter: isHighlighted
+                ? `drop-shadow(0 0 2.6px ${color})`
+                : "drop-shadow(0 4px 6px rgba(0,0,0,.25))",
+              transform: isPressed ? "translateY(4px)" : "translateY(0px)",
+              transition: "all .12s ease"
+            }}
           />
-          {isHighlighted && (
-            <>
-              <text x={x + whiteKeyWidth / 2} y={headerHeight + whiteKeyHeight - 20}
-                textAnchor="middle" fill={isHighlighted ? 'white' : 'hsl(var(--foreground))'}
-                style={{ fontSize: compact ? 9 : 11, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>
-                {noteInfo?.note || noteName}
-              </text>
-              {noteInfo?.interval && (
-                <text x={x + whiteKeyWidth / 2} y={headerHeight + whiteKeyHeight - 8}
-                  textAnchor="middle" fill="rgba(255,255,255,0.8)"
-                  style={{ fontSize: compact ? 7 : 9, fontWeight: 500, fontFamily: 'Inter, sans-serif' }}>
-                  {noteInfo.interval}
-                </text>
-              )}
-            </>
-          )}
-        </g>
-      );
-    }
 
-    // Black keys
-    for (const [semiStr, whiteIdx] of Object.entries(BLACK_NOTE_POSITIONS)) {
-      const semi = Number(semiStr);
-      const keyIdx = oct * 7 + whiteIdx;
-      const x = (keyIdx + 1) * whiteKeyWidth - blackKeyWidth / 2 + 1;
-      const noteInfo = noteMap.get(semi);
-      const isHighlighted = !!noteInfo;
-      const midi = 12 * (currentOctave + 1) + semi;
-
-      blackKeys.push(
-        <g key={`black-${oct}-${semi}`} className="cursor-pointer" onClick={() => playNote(midi, 0.8, 0.35)}>
-          <rect x={x} y={headerHeight} width={blackKeyWidth} height={blackKeyHeight}
-            rx={2}
-            fill={isHighlighted ? getColor(noteInfo!) : 'hsl(var(--foreground))'}
-            stroke="hsl(var(--foreground))" strokeWidth={0.5}
-            opacity={isHighlighted ? 0.95 : 0.85}
-            className="hover:opacity-70 transition-opacity"
-          />
           {isHighlighted && (
-            <text x={x + blackKeyWidth / 2} y={headerHeight + blackKeyHeight - 8}
-              textAnchor="middle" fill="white"
-              style={{ fontSize: compact ? 7 : 8, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>
+            <text
+              x={x + whiteKeyWidth / 2}
+              y={headerHeight + whiteKeyHeight - 26}
+              textAnchor="middle"
+              fill="white"
+              style={{ fontSize: 13, fontWeight: 800 }}
+            >
               {noteInfo?.note}
             </text>
           )}
+
         </g>
-      );
+      )
+    }
+
+    for (const [semiStr, whiteIdx] of Object.entries(BLACK_NOTE_POSITIONS)) {
+
+      const semi = Number(semiStr)
+      const keyIdx = oct * 7 + whiteIdx
+      const x = (keyIdx + 1) * whiteKeyWidth - blackKeyWidth / 2 + 2
+      const midi = 12 * (currentOctave + 1) + semi
+
+      const noteInfo = noteMap.get(midi)
+      const isHighlighted = !!noteInfo
+      const isPressed = pressedKey === midi
+      const color = getColor(noteInfo)
+
+      blackKeys.push(
+        <g key={`black-${oct}-${semi}`} onMouseDown={() => press(midi)} className="cursor-pointer">
+
+          <rect
+            x={x}
+            y={headerHeight}
+            width={blackKeyWidth}
+            height={blackKeyHeight}
+            rx={5}
+            fill={isHighlighted ? color : "url(#blackGrad)"}
+            style={{
+              filter: isHighlighted
+                ? `drop-shadow(0 0 16px ${color})`
+                : "drop-shadow(0 10px 12px rgba(0,0,0,.7))",
+              transform: isPressed ? "translateY(3px) scale(.96)" : "translateY(0)",
+              transition: "all .12s ease"
+            }}
+          />
+
+          {isHighlighted && (
+            <text
+              x={x + blackKeyWidth / 2}
+              y={headerHeight + blackKeyHeight - 18}
+              textAnchor="middle"
+              fill="white"
+              style={{ fontSize: 11, fontWeight: 800 }}
+            >
+              {noteInfo?.note}
+            </text>
+          )}
+
+        </g>
+      )
     }
   }
 
   return (
-    <div className="inline-block">
-      <svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-        className="select-none" style={{ maxWidth: '100%', height: 'auto' }}>
-        {title && (
-          <>
-            <text x={4} y={16} className="fill-foreground"
-              style={{ fontSize: 14, fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>{title}</text>
-            {subtitle && (
-              <text x={4} y={32} className="fill-muted-foreground"
-                style={{ fontSize: 11, fontWeight: 400, fontFamily: 'Inter, sans-serif' }}>{subtitle}</text>
-            )}
-          </>
-        )}
-        {keys}
+    <div className={`${themeClass} inline-block`}>
+      <svg width={octaves * 7 * whiteKeyWidth + 4} height={whiteKeyHeight + 30}>
+        <defs>
+          <linearGradient id="whiteGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffffff"/>
+            <stop offset="100%" stopColor="#e5e7eb"/>
+          </linearGradient>
+
+          <linearGradient id="blackGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#222"/>
+            <stop offset="100%" stopColor="#000"/>
+          </linearGradient>
+        </defs>
+
+        {whiteKeys}
         {blackKeys}
       </svg>
     </div>
-  );
-};
+  )
+}
 
-export default PianoKeyboard;
+export default PianoKeyboard

@@ -1,9 +1,10 @@
 import React from 'react';
-import { getNoteIndex, getNoteName, useFlats, spellScale, SCALE_FORMULAS } from '@/lib/musicTheory';
+import { getNoteIndex, getNoteName, useFlats, spellScale, SCALE_FORMULAS, SCALE_CATEGORIES } from '@/lib/musicTheory';
 
 interface ScaleInfoPanelProps {
   root: string;
   scaleType: string;
+  setScaleType: (s: string) => void;
 }
 
 const MODE_DEGREES: Record<string, { degree: number; label: string; ordinal: string; quality: string; feeling: string }> = {
@@ -25,12 +26,10 @@ const SCALE_FEELINGS: Record<string, string> = {
 
 const MAJOR_FORMULA = [0, 2, 4, 5, 7, 9, 11];
 
-// Always prefer flats for parent key names (Bb instead of A#, Ab instead of G#, etc.)
 function getParentMajorKey(root: string, modeDegree: number): string {
   const rootSemi = getNoteIndex(root);
   const interval = MAJOR_FORMULA[modeDegree - 1];
   const parentSemi = ((rootSemi - interval) % 12 + 12) % 12;
-  // Always use flats for more intuitive naming
   return getNoteName(parentSemi, true);
 }
 
@@ -57,7 +56,9 @@ const FeelingBadge: React.FC<{ quality?: string; feeling: string }> = ({ quality
   </div>
 );
 
-const ScaleInfoPanel: React.FC<ScaleInfoPanelProps> = ({ root, scaleType }) => {
+const ScaleInfoPanel: React.FC<ScaleInfoPanelProps> = ({ root, scaleType, setScaleType }) => {
+  const [open, setOpen] = React.useState(false); // ✅ ADICIONADO
+
   const isGreekMode = !!MODE_DEGREES[scaleType];
   const isMajor = scaleType === 'Maior';
   const isMinorNatural = scaleType === 'Menor Natural';
@@ -67,6 +68,49 @@ const ScaleInfoPanel: React.FC<ScaleInfoPanelProps> = ({ root, scaleType }) => {
   const isHarmonicMinor = scaleType === 'Menor Harmônica';
   const isMelodicMinor = scaleType === 'Menor Melódica';
 
+  // ✅ COMPONENTE REUTILIZÁVEL DO SELECTOR
+  const ScaleSelector = () => (
+    <div className="relative z-50">
+      <button
+  type="button"
+  onClick={() => setOpen(prev => !prev)}
+        className="w-full text-left px-3 py-2 rounded-lg bg-secondary text-foreground font-semibold flex justify-between items-center"
+      >
+        {scaleType}
+        <span className="text-xs">▼</span>
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-2 w-full bg-card border border-border rounded-lg p-2 max-h-64 overflow-y-auto shadow-lg">
+          {Object.entries(SCALE_CATEGORIES).map(([cat, scales]) => (
+            <div key={cat} className="mb-2">
+              <p className="text-[10px] uppercase text-muted-foreground mb-1 font-bold">
+                {cat}
+              </p>
+
+              {scales.map(s => (
+                <button
+                key={s}
+                onClick={() => {
+  setScaleType(s);
+  setOpen(false);
+}}
+                  className={`w-full text-left px-2 py-1 rounded text-xs ${
+                    scaleType === s
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-secondary'
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   if (isGreekMode) {
     const { degree, label, ordinal, quality, feeling } = MODE_DEGREES[scaleType];
     const parentKey = getParentMajorKey(root, degree);
@@ -75,6 +119,8 @@ const ScaleInfoPanel: React.FC<ScaleInfoPanelProps> = ({ root, scaleType }) => {
 
     return (
       <div className="bg-card border border-border rounded-lg p-4 mt-4 space-y-3">
+        <ScaleSelector /> {/* ✅ AQUI */}
+
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-primary">Modo Grego</span>
           <span className="text-xs text-muted-foreground">•</span>
@@ -130,6 +176,8 @@ const ScaleInfoPanel: React.FC<ScaleInfoPanelProps> = ({ root, scaleType }) => {
 
     return (
       <div className="bg-card border border-border rounded-lg p-4 mt-4 space-y-3">
+        <ScaleSelector /> {/* ✅ AQUI */}
+
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-primary">Informações da Escala</span>
         </div>
@@ -137,148 +185,101 @@ const ScaleInfoPanel: React.FC<ScaleInfoPanelProps> = ({ root, scaleType }) => {
         {feeling && <FeelingBadge feeling={feeling} />}
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Relativo {isMajorType ? 'menor' : 'maior'}:</span>
-            <span className="text-sm font-bold text-foreground">{relativeLabel}</span>
-          </div>
+          <span className="text-sm text-muted-foreground">
+            Relativo {isMajorType ? 'menor' : 'maior'}:
+          </span>
+          <span className="text-sm font-bold text-foreground">{relativeLabel}</span>
         </div>
 
         <p className="text-xs text-muted-foreground">
           {isMajorType
-            ? `${root} Maior e ${relativeName}m compartilham as mesmas notas. ${relativeName}m começa no 6º grau de ${root} Maior.`
-            : `${root}m e ${relativeName} Maior compartilham as mesmas notas. ${relativeName} Maior começa no 3º grau de ${root} Menor.`
+            ? `${root} Maior e ${relativeName}m compartilham as mesmas notas.`
+            : `${root}m e ${relativeName} Maior compartilham as mesmas notas.`
           }
         </p>
 
         <div className="grid grid-cols-2 gap-3 pt-2">
           <div className="p-2 rounded-lg bg-secondary/50 border border-border">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5">
-              {root} {scaleType}
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {spellScale(root, scaleType).map((note, i) => (
-                <span key={i} className={`text-xs font-mono font-bold ${i === 0 ? 'text-primary' : 'text-foreground'}`}>
-                  {note}{i < 6 ? ' ' : ''}
-                </span>
-              ))}
-            </div>
+            <p className="text-[10px] font-bold mb-1.5">{root} {scaleType}</p>
+            {spellScale(root, scaleType).map((n, i) => (
+              <span key={i}>{n} </span>
+            ))}
           </div>
           <div className="p-2 rounded-lg bg-secondary/50 border border-border">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5">
-              {relativeName} {relativeType}
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {relativeScale.map((note, i) => (
-                <span key={i} className={`text-xs font-mono font-bold ${i === 0 ? 'text-primary' : 'text-foreground'}`}>
-                  {note}{i < 6 ? ' ' : ''}
-                </span>
-              ))}
-            </div>
+            <p className="text-[10px] font-bold mb-1.5">{relativeName} {relativeType}</p>
+            {relativeScale.map((n, i) => (
+              <span key={i}>{n} </span>
+            ))}
           </div>
         </div>
-
-        {(isHarmonicMinor || isMelodicMinor) && (
-          <div className="pt-2 border-t border-border">
-            <p className="text-[10px] text-muted-foreground italic">
-              {isHarmonicMinor
-                ? `A escala Menor Harmônica é derivada da Menor Natural com o 7º grau elevado em meio tom, criando um intervalo de 2ª aumentada entre o 6º e 7º grau.`
-                : `A escala Menor Melódica é derivada da Menor Natural com o 6º e 7º graus elevados, eliminando o intervalo de 2ª aumentada.`
-              }
-            </p>
-          </div>
-        )}
       </div>
     );
   }
 
-  // Pentatonic info
-  if (isPentatonicMajor || isPentatonicMinor) {
-    const parentType = isPentatonicMajor ? 'Maior' : 'Menor Natural';
-    const relativePentRoot = isPentatonicMajor ? getRelativeMinor(root) : getRelativeMajor(root);
-    const relativePentType = isPentatonicMajor ? 'Pentatônica Menor' : 'Pentatônica Maior';
+  if (isPentatonicMajor || isPentatonicMinor || isBlues) {
+  const scale = spellScale(root, scaleType);
 
-    return (
-      <div className="bg-card border border-border rounded-lg p-4 mt-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-primary">Informações da Escala</span>
-        </div>
+  const relative =
+    isPentatonicMajor
+      ? getRelativeMinor(root)
+      : isPentatonicMinor
+      ? getRelativeMajor(root)
+      : null;
 
+  return (
+    <div className="bg-card border border-border rounded-lg p-4 mt-4 space-y-3">
+      <ScaleSelector />
+
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-bold uppercase tracking-wider text-primary">
+          {isBlues ? 'Escala Blues' : 'Escala Pentatônica'}
+        </span>
+        <span className="text-sm font-bold text-foreground">
+          {root} {scaleType}
+        </span>
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        {isBlues
+          ? 'Escala com blue note, muito usada no blues e rock.'
+          : 'Escala de 5 notas, muito usada para improvisação.'}
+      </p>
+
+      {relative && (
         <p className="text-xs text-muted-foreground">
-          {isPentatonicMajor
-            ? `${root} Pentatônica Maior é derivada de ${root} Maior, removendo o 4º e 7º graus.`
-            : `${root} Pentatônica Menor é derivada de ${root} Menor Natural, removendo o 2º e 6º graus.`
-          }
+          Relativa:{' '}
+          <span className="font-bold text-foreground">
+            {isPentatonicMajor ? `${relative}m` : relative}
+          </span>
         </p>
+      )}
 
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">Relativa:</span>
-          <span className="text-sm font-bold text-foreground">{relativePentRoot} {relativePentType}</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="p-2 rounded-lg bg-secondary/50 border border-border">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5">
-              {root} {scaleType}
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {spellScale(root, scaleType).map((note, i) => (
-                <span key={i} className="text-xs font-mono font-bold text-foreground">{note}</span>
-              ))}
-            </div>
-          </div>
-          <div className="p-2 rounded-lg bg-secondary/50 border border-border">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5">
-              {relativePentRoot} {relativePentType}
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {spellScale(relativePentRoot, relativePentType).map((note, i) => (
-                <span key={i} className="text-xs font-mono font-bold text-foreground">{note}</span>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div className="flex flex-wrap gap-1.5">
+        {scale.map((note, i) => (
+          <span
+            key={i}
+            className={`inline-flex items-center justify-center min-w-[2rem] h-8 rounded-full text-xs font-bold px-2 ${
+              i === 0
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground'
+            }`}
+          >
+            {note}
+          </span>
+        ))}
       </div>
-    );
-  }
+    </div>
+  );
+}
+  return (
+  <div className="bg-card border border-border rounded-lg p-4 mt-4 space-y-3">
+    <ScaleSelector />
 
-  if (isBlues) {
-    return (
-      <div className="bg-card border border-border rounded-lg p-4 mt-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-primary">Informações da Escala</span>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          A escala Blues de <span className="font-bold text-foreground">{root}</span> é a Pentatônica Menor com a adição da <span className="font-bold text-foreground">blue note</span> (b5/trítono), que cria a sonoridade característica do blues.
-        </p>
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="p-2 rounded-lg bg-secondary/50 border border-border">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5">
-              {root} Blues
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {spellScale(root, 'Blues').map((note, i) => (
-                <span key={i} className={`text-xs font-mono font-bold ${i === 3 ? 'text-primary' : 'text-foreground'}`}>
-                  {note}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="p-2 rounded-lg bg-secondary/50 border border-border">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1.5">
-              {root} Pentatônica Menor
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {spellScale(root, 'Pentatônica Menor').map((note, i) => (
-                <span key={i} className="text-xs font-mono font-bold text-foreground">{note}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+    <p className="text-sm text-muted-foreground">
+      Escala {scaleType} não possui informações adicionais ainda.
+    </p>
+  </div>
+);
 };
 
 export default ScaleInfoPanel;

@@ -10,6 +10,9 @@ import ScaleInfoPanel from '@/components/ScaleInfoPanel';
 import InstrumentSwitcher from '@/components/InstrumentSwitcher';
 import { useInstrument } from '@/contexts/InstrumentContext';
 import { updateAudioSettings } from '@/lib/audioEngine';
+import PianoChordGenerator from '@/components/PianoChordGenerator';
+import UkuleleFretboard from '@/components/ukuleleFretboard';
+import { getUkuleleFretboardNotes } from '@/lib/musicTheory';
 import {
   getScale,
   getHarmonicField,
@@ -46,7 +49,7 @@ const Index: React.FC = () => {
   const [colorVariant, setColorVariant] = useState(0);
   const [noteSize, setNoteSize] = useState(14);
   const [show24Frets, setShow24Frets] = useState(false);
-
+  const allUkuleleNotes = getUkuleleFretboardNotes(12);
   const currentMaxFret = show24Frets ? 24 : 12;
 
   const harmonicField = useMemo(() => getHarmonicField(root), [root]);
@@ -87,7 +90,12 @@ const Index: React.FC = () => {
     }
   }, [colorMode, colorVariant]);
 
-  const currentFretNotes = instrument === 'bass' ? allBassFretNotes : allFretNotes;
+  const currentFretNotes =
+  instrument === 'bass'
+    ? allBassFretNotes
+    : instrument === 'ukulele'
+    ? allUkuleleNotes
+    : allFretNotes;
   const scaleNotes = useMemo(() => filterByScale(currentFretNotes, root, scaleType), [root, scaleType, currentFretNotes]);
 
   // Piano: generate highlighted notes for the keyboard
@@ -128,16 +136,13 @@ const Index: React.FC = () => {
     pianoNotes?: typeof pianoScaleNotes;
   }) => {
     if (instrument === 'piano') {
-      return (
-        <PianoKeyboard
-          highlightedNotes={props.pianoNotes || pianoScaleNotes}
-          colorMode={props.colorMode || colorMode}
-          title={props.title}
-          subtitle={props.subtitle}
-          compact={props.compact}
-        />
-      );
-    }
+  return (
+    <PianoKeyboard
+      highlightedNotes={props.pianoNotes || pianoScaleNotes}
+      colorMode={props.colorMode || colorMode}
+    />
+  );
+}
     if (instrument === 'bass') {
       return (
         <BassFretboard
@@ -154,6 +159,24 @@ const Index: React.FC = () => {
         />
       );
     }
+
+    if (instrument === 'ukulele') {
+  return (
+    <UkuleleFretboard
+      notes={props.notes}
+      maxFret={12} // 👈 ukulele geralmente 12 casas
+      showNoteNames={props.showNoteNames}
+      showDegrees={props.showDegrees}
+      colorMode={props.colorMode || colorMode}
+      colorVariant={props.colorVariant ?? colorVariant}
+      noteRadius={props.noteRadius ?? noteSize}
+      title={props.title}
+      subtitle={props.subtitle}
+      compact={props.compact}
+      allowVertical={props.allowVertical}
+    />
+  );
+}
     return (
       <GuitarFretboard
         notes={props.notes}
@@ -186,7 +209,11 @@ const Index: React.FC = () => {
             {renderInstrument({ notes: scaleNotes, showNoteNames: true, showDegrees: true, title: `${root} ${scaleType}` })}
           </div>
           <DegreeLegend />
-          <ScaleInfoPanel root={root} scaleType={scaleType} />
+          <ScaleInfoPanel 
+  root={root} 
+  scaleType={scaleType} 
+  setScaleType={setScaleType}
+/>
         </div>
       );
     }
@@ -211,7 +238,11 @@ const Index: React.FC = () => {
             </div>
             {viewMode === 'tensions' && <TensionLegend />}
             <DegreeLegend />
-            <ScaleInfoPanel root={root} scaleType={scaleType} />
+            <ScaleInfoPanel 
+  root={root} 
+  scaleType={scaleType} 
+  setScaleType={setScaleType}
+/>
           </div>
         );
 
@@ -228,7 +259,11 @@ const Index: React.FC = () => {
               })}
             </div>
             <IntervalLegend root={root} scaleType={scaleType} />
-            <ScaleInfoPanel root={root} scaleType={scaleType} />
+            <ScaleInfoPanel 
+  root={root} 
+  scaleType={scaleType} 
+  setScaleType={setScaleType}
+/>
           </div>
         );
 
@@ -248,7 +283,11 @@ const Index: React.FC = () => {
         return renderImprovisationView();
 
       case 'chord-generator':
-        return <ChordGeneratorView root={root} setRoot={setRoot} />;
+      if (instrument === 'piano') {
+        return <PianoChordGenerator root={root} setRoot={setRoot} />;
+  }
+
+  return <ChordGeneratorView root={root} setRoot={setRoot} />;
 
       case 'progressions':
         return <ProgressionGeneratorView root={root} setRoot={setRoot} />;

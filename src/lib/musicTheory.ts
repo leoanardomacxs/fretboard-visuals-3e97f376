@@ -1,4 +1,5 @@
 // All 12 chromatic notes
+import { noteNameToMidi } from '@/lib/audioEngine';
 export const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
 export const NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 
@@ -444,6 +445,25 @@ export function filterByNotes(allNotes: FretNote[], targetNotes: string[], root:
         isChordTone: true,
       };
     });
+}
+
+export function getUkuleleFretboardNotes(maxFret: number) {
+  const tuning = ['G', 'C', 'E', 'A'];
+
+  return tuning.flatMap((openNote, stringIndex) => {
+    const openIndex = getNoteIndex(openNote);
+
+    return Array.from({ length: maxFret + 1 }).map((_, fret) => {
+      const noteIndex = (openIndex + fret) % 12;
+
+      return {
+        string: stringIndex,
+        fret,
+        note: getNoteName(noteIndex, false),
+        midi: noteNameToMidi(getNoteName(noteIndex, false), 4), // Assuming ukulele octave 4 for MIDI
+      };
+    });
+  });
 }
 
 export const ALL_ROOTS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];

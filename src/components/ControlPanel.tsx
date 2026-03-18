@@ -191,6 +191,24 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         )}
       </Section>
 
+
+
+      <div>
+  <button
+    onClick={() => {
+      playClick(500);
+      setViewMode('full'); // ou criar 'scale' se quiser separar
+    }}
+    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+      !['chord-generator','progressions','harmonic-field-view'].includes(viewMode)
+        ? 'bg-primary text-primary-foreground shadow-md'
+        : 'bg-secondary text-foreground hover:bg-secondary/80'
+    }`}
+  >
+    Gerador de escalas
+  </button>
+</div>
+
       {/* Gerador de Acordes — botão exclusivo (hidden for bass) */}
       {!isBass && (
         <div>
@@ -206,6 +224,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </button>
         </div>
       )}
+
 
       {/* Progressões — botão exclusivo */}
       {!isBass && (
@@ -223,6 +242,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       )}
 
+
       {/* Campo Harmônico — botão exclusivo */}
       {!isBass && (
         <div>
@@ -238,37 +258,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </button>
         </div>
       )}
-
-      {/* Escala */}
-      <Section title="Escala" collapsible defaultOpen={false}>
-        {Object.entries(SCALE_CATEGORIES).map(([cat, scales]) => (
-          <div key={cat} className="mb-2">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 font-semibold">{cat}</p>
-            <div className="space-y-0.5">
-              {scales.map(s => (
-                <button
-                  key={s}
-                  onClick={() => {
-                    setScaleType(s);
-                    if (viewMode === 'chord-generator' || viewMode === 'progressions' || viewMode === 'harmonic-field-view') setViewMode('full');
-                    const formula = SCALE_FORMULAS[s];
-                    if (formula) {
-                      playScale(getScaleMidiNotes(root, formula), 0.2, 0.4);
-                    }
-                  }}
-                  className={`w-full text-left px-2 py-1 rounded text-xs transition-all ${
-                    scaleType === s
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-foreground hover:bg-secondary'
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </Section>
 
       {/* Visualização */}
       <Section title="Visualização" collapsible defaultOpen={false}>
