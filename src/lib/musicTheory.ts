@@ -6,8 +6,11 @@ export type NoteName = string;
 
 // Standard tuning E A D G B E (low to high)
 export const STANDARD_TUNING = [40, 45, 50, 55, 59, 64]; // MIDI numbers E2-E4
-
 export const TUNING_NOTES = ['E', 'A', 'D', 'G', 'B', 'E'];
+
+// Bass standard tuning E A D G (low to high)
+export const BASS_TUNING = [28, 33, 38, 43]; // MIDI numbers E1-G2
+export const BASS_TUNING_NOTES = ['E', 'A', 'D', 'G'];
 
 // Scale formulas as semitone intervals from root
 export const SCALE_FORMULAS: Record<string, number[]> = {
