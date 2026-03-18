@@ -104,7 +104,85 @@ const Index: React.FC = () => {
   const getShowNotes = (): boolean => ['full', 'notes', 'notes-degrees', 'chord', 'improvisation', 'tensions'].includes(viewMode);
   const getShowDegrees = (): boolean => ['degrees', 'notes-degrees', 'intervals', 'tensions'].includes(viewMode);
 
+  // Unified fretboard/keyboard render
+  const renderInstrument = (props: {
+    notes: FretNote[];
+    maxFret?: number;
+    showNoteNames?: boolean;
+    showDegrees?: boolean;
+    colorMode?: 'degree' | 'note' | 'function';
+    colorVariant?: number;
+    noteRadius?: number;
+    title?: string;
+    subtitle?: string;
+    compact?: boolean;
+    allowVertical?: boolean;
+    pianoNotes?: typeof pianoScaleNotes;
+  }) => {
+    if (instrument === 'piano') {
+      return (
+        <PianoKeyboard
+          highlightedNotes={props.pianoNotes || pianoScaleNotes}
+          colorMode={props.colorMode || colorMode}
+          title={props.title}
+          subtitle={props.subtitle}
+          compact={props.compact}
+        />
+      );
+    }
+    if (instrument === 'bass') {
+      return (
+        <BassFretboard
+          notes={props.notes}
+          maxFret={props.maxFret ?? currentMaxFret}
+          showNoteNames={props.showNoteNames}
+          showDegrees={props.showDegrees}
+          colorMode={props.colorMode || colorMode}
+          colorVariant={props.colorVariant ?? colorVariant}
+          noteRadius={props.noteRadius ?? noteSize}
+          title={props.title}
+          subtitle={props.subtitle}
+          compact={props.compact}
+        />
+      );
+    }
+    return (
+      <GuitarFretboard
+        notes={props.notes}
+        maxFret={props.maxFret ?? currentMaxFret}
+        showNoteNames={props.showNoteNames}
+        showDegrees={props.showDegrees}
+        colorMode={props.colorMode || colorMode}
+        colorVariant={props.colorVariant ?? colorVariant}
+        noteRadius={props.noteRadius ?? noteSize}
+        title={props.title}
+        subtitle={props.subtitle}
+        compact={props.compact}
+        allowVertical={props.allowVertical}
+      />
+    );
+  };
+
+  const instrumentLabel = instrument === 'bass' ? 'Baixo' : instrument === 'piano' ? 'Piano' : 'Guitarra';
+  // For bass, hide chord-specific views
+  const isBass = instrument === 'bass';
+  const isPiano = instrument === 'piano';
+
   const renderMainView = () => {
+    // Bass: redirect chord views to scale views
+    if (isBass && (viewMode === 'chord' || viewMode === 'chord-generator' || viewMode === 'improvisation')) {
+      return (
+        <div className="space-y-4">
+          <ViewHeader title={`${root} ${scaleType} — ${instrumentLabel}`} subtitle={`${getScale(root, scaleType).join(' – ')}`} />
+          <div className="overflow-x-auto pb-4">
+            {renderInstrument({ notes: scaleNotes, showNoteNames: true, showDegrees: true, title: `${root} ${scaleType}` })}
+          </div>
+          <DegreeLegend />
+          <ScaleInfoPanel root={root} scaleType={scaleType} />
+        </div>
+      );
+    }
+
     switch (viewMode) {
       case 'full':
       case 'notes':
@@ -115,21 +193,15 @@ const Index: React.FC = () => {
           <div className="space-y-4">
             <ViewHeader title={`${root} ${scaleType}`} subtitle={`${getScale(root, scaleType).join(' – ')}`} />
             <div className="overflow-x-auto pb-4">
-              <GuitarFretboard
-                notes={scaleNotes}
-                maxFret={currentMaxFret}
-                showNoteNames={getShowNotes()}
-                showDegrees={getShowDegrees()}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                noteRadius={noteSize}
-                title={`${root} ${scaleType}`}
-                subtitle={viewMode === 'tensions' ? 'Tensões destacadas' : undefined}
-              />
+              {renderInstrument({
+                notes: scaleNotes,
+                showNoteNames: getShowNotes(),
+                showDegrees: getShowDegrees(),
+                title: `${root} ${scaleType}`,
+                subtitle: viewMode === 'tensions' ? 'Tensões destacadas' : undefined,
+              })}
             </div>
-            {viewMode === 'tensions' && (
-              <TensionLegend />
-            )}
+            {viewMode === 'tensions' && <TensionLegend />}
             <DegreeLegend />
             <ScaleInfoPanel root={root} scaleType={scaleType} />
           </div>
@@ -140,16 +212,12 @@ const Index: React.FC = () => {
           <div className="space-y-4">
             <ViewHeader title={`Intervalos — ${root} ${scaleType}`} />
             <div className="overflow-x-auto pb-4">
-              <GuitarFretboard
-                notes={scaleNotes}
-                maxFret={currentMaxFret}
-                showNoteNames={false}
-                showDegrees={true}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                noteRadius={noteSize}
-                title={`Intervalos de ${root} ${scaleType}`}
-              />
+              {renderInstrument({
+                notes: scaleNotes,
+                showNoteNames: false,
+                showDegrees: true,
+                title: `Intervalos de ${root} ${scaleType}`,
+              })}
             </div>
             <IntervalLegend root={root} scaleType={scaleType} />
             <ScaleInfoPanel root={root} scaleType={scaleType} />
