@@ -1,30 +1,40 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import GuitarFretboard from '@/components/GuitarFretboard';
+import BassFretboard from '@/components/BassFretboard';
+import PianoKeyboard from '@/components/PianoKeyboard';
 import ControlPanel, { type ViewMode, DEGREE_PALETTES, NOTE_PALETTES, FUNCTION_PALETTES } from '@/components/ControlPanel';
 import ChordGeneratorView from '@/components/ChordGeneratorView';
 import ProgressionGeneratorView from '@/components/ProgressionGeneratorView';
 import HarmonicFieldView from '@/components/HarmonicFieldView';
 import ScaleInfoPanel from '@/components/ScaleInfoPanel';
+import InstrumentSwitcher from '@/components/InstrumentSwitcher';
+import { useInstrument } from '@/contexts/InstrumentContext';
+import { updateAudioSettings } from '@/lib/audioEngine';
 import {
   getScale,
   getHarmonicField,
   getHarmonicFieldForScale,
   getFretboardNotes,
+  getBassFretboardNotes,
   filterByScale,
   filterByNotes,
   getArpeggio,
   getRelatedPentatonic,
   useFlats,
+  getScaleDegree,
+  getIntervalName,
+  getNoteIndex,
   type ChordInfo,
   type FretNote,
   SCALE_FORMULAS,
-  getNoteIndex,
   getNoteName,
 } from '@/lib/musicTheory';
 
 const allFretNotes = getFretboardNotes(24);
+const allBassFretNotes = getBassFretboardNotes(24);
 
 const Index: React.FC = () => {
+  const { instrument } = useInstrument();
   const [root, setRoot] = useState('C');
   const [scaleType, setScaleType] = useState('Maior');
   const [viewMode, setViewMode] = useState<ViewMode>('full');
@@ -49,6 +59,13 @@ const Index: React.FC = () => {
     }
   }, [viewMode, harmonicField, selectedChord]);
 
+  // Auto-switch timbre when changing instrument
+  useEffect(() => {
+    if (instrument === 'bass') updateAudioSettings({ timbre: 'bass' });
+    else if (instrument === 'piano') updateAudioSettings({ timbre: 'piano' });
+    else updateAudioSettings({ timbre: 'guitar' });
+  }, [instrument]);
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
@@ -70,12 +87,110 @@ const Index: React.FC = () => {
     }
   }, [colorMode, colorVariant]);
 
-  const scaleNotes = useMemo(() => filterByScale(allFretNotes, root, scaleType), [root, scaleType]);
+  const currentFretNotes = instrument === 'bass' ? allBassFretNotes : allFretNotes;
+  const scaleNotes = useMemo(() => filterByScale(currentFretNotes, root, scaleType), [root, scaleType, currentFretNotes]);
+
+  // Piano: generate highlighted notes for the keyboard
+  const pianoScaleNotes = useMemo(() => {
+    const scale = getScale(root, scaleType);
+    return scale.map((note, i) => ({
+      note,
+      degree: i + 1,
+      interval: (() => {
+        const formula = SCALE_FORMULAS[scaleType];
+        if (!formula) return '';
+        const intervalNames: Record<number, string> = {
+          0: '1', 1: 'b2', 2: '2', 3: 'b3', 4: '3', 5: '4',
+          6: 'b5', 7: '5', 8: 'b6', 9: '6', 10: 'b7', 11: '7',
+        };
+        return intervalNames[formula[i]] || '';
+      })(),
+      isRoot: i === 0,
+    }));
+  }, [root, scaleType]);
 
   const getShowNotes = (): boolean => ['full', 'notes', 'notes-degrees', 'chord', 'improvisation', 'tensions'].includes(viewMode);
   const getShowDegrees = (): boolean => ['degrees', 'notes-degrees', 'intervals', 'tensions'].includes(viewMode);
 
+  // Unified fretboard/keyboard render
+  const renderInstrument = (props: {
+    notes: FretNote[];
+    maxFret?: number;
+    showNoteNames?: boolean;
+    showDegrees?: boolean;
+    colorMode?: 'degree' | 'note' | 'function';
+    colorVariant?: number;
+    noteRadius?: number;
+    title?: string;
+    subtitle?: string;
+    compact?: boolean;
+    allowVertical?: boolean;
+    pianoNotes?: typeof pianoScaleNotes;
+  }) => {
+    if (instrument === 'piano') {
+      return (
+        <PianoKeyboard
+          highlightedNotes={props.pianoNotes || pianoScaleNotes}
+          colorMode={props.colorMode || colorMode}
+          title={props.title}
+          subtitle={props.subtitle}
+          compact={props.compact}
+        />
+      );
+    }
+    if (instrument === 'bass') {
+      return (
+        <BassFretboard
+          notes={props.notes}
+          maxFret={props.maxFret ?? currentMaxFret}
+          showNoteNames={props.showNoteNames}
+          showDegrees={props.showDegrees}
+          colorMode={props.colorMode || colorMode}
+          colorVariant={props.colorVariant ?? colorVariant}
+          noteRadius={props.noteRadius ?? noteSize}
+          title={props.title}
+          subtitle={props.subtitle}
+          compact={props.compact}
+        />
+      );
+    }
+    return (
+      <GuitarFretboard
+        notes={props.notes}
+        maxFret={props.maxFret ?? currentMaxFret}
+        showNoteNames={props.showNoteNames}
+        showDegrees={props.showDegrees}
+        colorMode={props.colorMode || colorMode}
+        colorVariant={props.colorVariant ?? colorVariant}
+        noteRadius={props.noteRadius ?? noteSize}
+        title={props.title}
+        subtitle={props.subtitle}
+        compact={props.compact}
+        allowVertical={props.allowVertical}
+      />
+    );
+  };
+
+  const instrumentLabel = instrument === 'bass' ? 'Baixo' : instrument === 'piano' ? 'Piano' : 'Guitarra';
+  // For bass, hide chord-specific views
+  const isBass = instrument === 'bass';
+  const isPiano = instrument === 'piano';
+
   const renderMainView = () => {
+    // Bass: redirect chord views to scale views
+    if (isBass && (viewMode === 'chord' || viewMode === 'chord-generator' || viewMode === 'improvisation')) {
+      return (
+        <div className="space-y-4">
+          <ViewHeader title={`${root} ${scaleType} — ${instrumentLabel}`} subtitle={`${getScale(root, scaleType).join(' – ')}`} />
+          <div className="overflow-x-auto pb-4">
+            {renderInstrument({ notes: scaleNotes, showNoteNames: true, showDegrees: true, title: `${root} ${scaleType}` })}
+          </div>
+          <DegreeLegend />
+          <ScaleInfoPanel root={root} scaleType={scaleType} />
+        </div>
+      );
+    }
+
     switch (viewMode) {
       case 'full':
       case 'notes':
@@ -86,21 +201,15 @@ const Index: React.FC = () => {
           <div className="space-y-4">
             <ViewHeader title={`${root} ${scaleType}`} subtitle={`${getScale(root, scaleType).join(' – ')}`} />
             <div className="overflow-x-auto pb-4">
-              <GuitarFretboard
-                notes={scaleNotes}
-                maxFret={currentMaxFret}
-                showNoteNames={getShowNotes()}
-                showDegrees={getShowDegrees()}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                noteRadius={noteSize}
-                title={`${root} ${scaleType}`}
-                subtitle={viewMode === 'tensions' ? 'Tensões destacadas' : undefined}
-              />
+              {renderInstrument({
+                notes: scaleNotes,
+                showNoteNames: getShowNotes(),
+                showDegrees: getShowDegrees(),
+                title: `${root} ${scaleType}`,
+                subtitle: viewMode === 'tensions' ? 'Tensões destacadas' : undefined,
+              })}
             </div>
-            {viewMode === 'tensions' && (
-              <TensionLegend />
-            )}
+            {viewMode === 'tensions' && <TensionLegend />}
             <DegreeLegend />
             <ScaleInfoPanel root={root} scaleType={scaleType} />
           </div>
@@ -111,16 +220,12 @@ const Index: React.FC = () => {
           <div className="space-y-4">
             <ViewHeader title={`Intervalos — ${root} ${scaleType}`} />
             <div className="overflow-x-auto pb-4">
-              <GuitarFretboard
-                notes={scaleNotes}
-                maxFret={currentMaxFret}
-                showNoteNames={false}
-                showDegrees={true}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                noteRadius={noteSize}
-                title={`Intervalos de ${root} ${scaleType}`}
-              />
+              {renderInstrument({
+                notes: scaleNotes,
+                showNoteNames: false,
+                showDegrees: true,
+                title: `Intervalos de ${root} ${scaleType}`,
+              })}
             </div>
             <IntervalLegend root={root} scaleType={scaleType} />
             <ScaleInfoPanel root={root} scaleType={scaleType} />
@@ -156,14 +261,7 @@ const Index: React.FC = () => {
           <div className="space-y-4">
             <ViewHeader title={`${root} ${scaleType}`} />
             <div className="overflow-x-auto pb-4">
-              <GuitarFretboard
-                notes={scaleNotes}
-                maxFret={currentMaxFret}
-                showNoteNames={true}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                noteRadius={noteSize}
-              />
+              {renderInstrument({ notes: scaleNotes, showNoteNames: true, title: `${root} ${scaleType}` })}
             </div>
           </div>
         );
@@ -173,13 +271,17 @@ const Index: React.FC = () => {
   const renderChordView = () => {
     if (!selectedChord) return null;
     const flats = useFlats(root);
-    const chordNotes = filterByNotes(allFretNotes, selectedChord.notes, selectedChord.root);
+    const chordNotes = filterByNotes(currentFretNotes, selectedChord.notes, selectedChord.root);
     const arpNotes = showArpeggio
-      ? filterByNotes(allFretNotes, getArpeggio(selectedChord.root, selectedChord.quality, flats), selectedChord.root)
+      ? filterByNotes(currentFretNotes, getArpeggio(selectedChord.root, selectedChord.quality, flats), selectedChord.root)
       : [];
     const pentNotes = showPentatonic
-      ? filterByScale(allFretNotes, selectedChord.root, selectedChord.quality === 'minor' || selectedChord.quality === 'diminished' ? 'Pentatônica Menor' : 'Pentatônica Maior')
+      ? filterByScale(currentFretNotes, selectedChord.root, selectedChord.quality === 'minor' || selectedChord.quality === 'diminished' ? 'Pentatônica Menor' : 'Pentatônica Maior')
       : [];
+
+    const chordPianoNotes = selectedChord.notes.map((note, i) => ({
+      note, degree: i === 0 ? 1 : undefined, isRoot: i === 0,
+    }));
 
     return (
       <div className="space-y-6">
@@ -188,54 +290,20 @@ const Index: React.FC = () => {
           subtitle={`Notas: ${selectedChord.notes.join(' – ')}`}
         />
         <div className="overflow-x-auto pb-2">
-          <GuitarFretboard
-            notes={chordNotes}
-            maxFret={currentMaxFret}
-            showNoteNames={true}
-            colorMode={colorMode}
-            colorVariant={colorVariant}
-            noteRadius={noteSize}
-            title={`Acorde ${selectedChord.name}`}
-            subtitle={`Notas: ${selectedChord.notes.join(' ')}`}
-          />
+          {renderInstrument({ notes: chordNotes, showNoteNames: true, title: `Acorde ${selectedChord.name}`, subtitle: `Notas: ${selectedChord.notes.join(' ')}`, pianoNotes: chordPianoNotes as any })}
         </div>
         {showArpeggio && (
           <div className="overflow-x-auto pb-2">
-            <GuitarFretboard
-              notes={arpNotes}
-              maxFret={currentMaxFret}
-              showNoteNames={true}
-              colorMode={colorMode}
-              colorVariant={colorVariant}
-              noteRadius={noteSize}
-              title={`Arpejo de ${selectedChord.name}`}
-            />
+            {renderInstrument({ notes: arpNotes, showNoteNames: true, title: `Arpejo de ${selectedChord.name}` })}
           </div>
         )}
         {showPentatonic && (
           <div className="overflow-x-auto pb-2">
-            <GuitarFretboard
-              notes={pentNotes}
-              maxFret={currentMaxFret}
-              showNoteNames={true}
-              showDegrees={true}
-              colorMode={colorMode}
-              colorVariant={colorVariant}
-              noteRadius={noteSize}
-              title={`Pentatônica de ${selectedChord.root}`}
-            />
+            {renderInstrument({ notes: pentNotes, showNoteNames: true, showDegrees: true, title: `Pentatônica de ${selectedChord.root}` })}
           </div>
         )}
         <div className="overflow-x-auto pb-2">
-          <GuitarFretboard
-            notes={scaleNotes}
-            maxFret={currentMaxFret}
-            showNoteNames={true}
-            colorMode={colorMode}
-            colorVariant={colorVariant}
-            noteRadius={noteSize * 0.85}
-            title={`Escala do Tom (${root} ${scaleType})`}
-          />
+          {renderInstrument({ notes: scaleNotes, showNoteNames: true, noteRadius: noteSize * 0.85, title: `Escala do Tom (${root} ${scaleType})` })}
         </div>
       </div>
     );
@@ -270,21 +338,15 @@ const Index: React.FC = () => {
             else if (ch.quality === 'augmented') scType = 'Maior';
             else scType = 'Maior';
           }
-          const notes = filterByScale(allFretNotes, ch.root, scType);
+          const notes = filterByScale(currentFretNotes, ch.root, scType);
           const displayLabel = isPentatonic ? scType : `${ch.name} (${ch.quality})`;
           return (
             <div key={ch.name} className="overflow-x-auto pb-2">
-              <GuitarFretboard
-                notes={notes}
-                maxFret={currentMaxFret}
-                showNoteNames={true}
-                showDegrees={true}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                noteRadius={noteSize * 0.9}
-                title={`${ch.romanNumeral} — ${isPentatonic ? `${ch.root} ${scType}` : ch.name}`}
-                subtitle={`Notas: ${getScale(ch.root, scType).join(' – ')}`}
-              />
+              {renderInstrument({
+                notes, showNoteNames: true, showDegrees: true, noteRadius: noteSize * 0.9,
+                title: `${ch.romanNumeral} — ${isPentatonic ? `${ch.root} ${scType}` : ch.name}`,
+                subtitle: `Notas: ${getScale(ch.root, scType).join(' – ')}`,
+              })}
             </div>
           );
         })}
@@ -298,19 +360,13 @@ const Index: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
         {harmonicField.map(ch => {
           const scType = ch.quality === 'Major' ? 'Maior' : ch.quality === 'minor' ? 'Menor Natural' : 'Lócrio';
-          const notes = filterByScale(allFretNotes, ch.root, scType);
+          const notes = filterByScale(currentFretNotes, ch.root, scType);
           return (
             <div key={ch.name} className="bg-card rounded-lg border border-border p-3 panel-shadow overflow-x-auto">
-              <GuitarFretboard
-                notes={notes}
-                maxFret={12}
-                showNoteNames={true}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                compact={true}
-                noteRadius={noteSize * 0.7}
-                title={`${ch.romanNumeral} — ${ch.name}`}
-              />
+              {renderInstrument({
+                notes, showNoteNames: true, compact: true, noteRadius: noteSize * 0.7, maxFret: 12,
+                title: `${ch.romanNumeral} — ${ch.name}`,
+              })}
             </div>
           );
         })}
@@ -320,25 +376,18 @@ const Index: React.FC = () => {
 
   const renderComparePentatonicsView = () => {
     const scale = getScale(root, 'Maior');
-    const colors = ['#e74c3c', '#3498db', '#2ecc71', '#e67e22', '#9b59b6', '#1abc9c', '#e91e63'];
     return (
       <div className="space-y-4">
         <ViewHeader title={`Pentatônicas do Campo de ${root}`} subtitle="Comparação visual" />
         {scale.map((note, i) => {
           const quality = [0, 3, 4].includes(i) ? 'Pentatônica Maior' : 'Pentatônica Menor';
-          const notes = filterByScale(allFretNotes, note, quality);
+          const notes = filterByScale(currentFretNotes, note, quality);
           return (
             <div key={note} className="overflow-x-auto pb-2">
-              <GuitarFretboard
-                notes={notes}
-                maxFret={currentMaxFret}
-                showNoteNames={true}
-                showDegrees={true}
-                colorMode={colorMode}
-                colorVariant={colorVariant}
-                noteRadius={noteSize * 0.9}
-                title={`${note} ${quality}`}
-              />
+              {renderInstrument({
+                notes, showNoteNames: true, showDegrees: true, noteRadius: noteSize * 0.9,
+                title: `${note} ${quality}`,
+              })}
             </div>
           );
         })}
@@ -348,10 +397,9 @@ const Index: React.FC = () => {
 
   const renderImprovisationView = () => {
     if (!selectedChord) return null;
-    const chordNotes = filterByNotes(allFretNotes, selectedChord.notes, selectedChord.root);
+    const chordNotes = filterByNotes(currentFretNotes, selectedChord.notes, selectedChord.root);
     const pentNotes = filterByScale(
-      allFretNotes,
-      selectedChord.root,
+      currentFretNotes, selectedChord.root,
       selectedChord.quality === 'minor' || selectedChord.quality === 'diminished' ? 'Pentatônica Menor' : 'Pentatônica Maior'
     );
     return (
@@ -365,39 +413,13 @@ const Index: React.FC = () => {
           <InfoCard title="Escala Recomendada" items={getScale(root, scaleType)} color="hsl(var(--degree-5))" />
         </div>
         <div className="overflow-x-auto pb-2">
-          <GuitarFretboard
-            notes={chordNotes}
-            maxFret={currentMaxFret}
-            showNoteNames={true}
-            colorMode={colorMode}
-            colorVariant={colorVariant}
-            noteRadius={noteSize}
-            title={`Notas Alvo — ${selectedChord.name}`}
-            subtitle="Chord tones"
-          />
+          {renderInstrument({ notes: chordNotes, showNoteNames: true, title: `Notas Alvo — ${selectedChord.name}`, subtitle: 'Chord tones' })}
         </div>
         <div className="overflow-x-auto pb-2">
-          <GuitarFretboard
-            notes={pentNotes}
-            maxFret={currentMaxFret}
-            showNoteNames={true}
-            showDegrees={true}
-            colorMode={colorMode}
-            colorVariant={colorVariant}
-            noteRadius={noteSize}
-            title={`Pentatônica — ${selectedChord.root}`}
-          />
+          {renderInstrument({ notes: pentNotes, showNoteNames: true, showDegrees: true, title: `Pentatônica — ${selectedChord.root}` })}
         </div>
         <div className="overflow-x-auto pb-2">
-          <GuitarFretboard
-            notes={scaleNotes}
-            maxFret={currentMaxFret}
-            showNoteNames={true}
-            colorMode={colorMode}
-            colorVariant={colorVariant}
-            noteRadius={noteSize * 0.85}
-            title={`Escala Completa — ${root} ${scaleType}`}
-          />
+          {renderInstrument({ notes: scaleNotes, showNoteNames: true, noteRadius: noteSize * 0.85, title: `Escala Completa — ${root} ${scaleType}` })}
         </div>
       </div>
     );
@@ -447,9 +469,12 @@ const Index: React.FC = () => {
         show24Frets={show24Frets} setShow24Frets={setShow24Frets}
       />
       <main ref={mainRef} className="flex-1 overflow-y-auto p-6 scrollbar-thin">
-        {/* Export buttons */}
-        <div className="flex items-center gap-2 mb-4 justify-end">
-          <span className="text-[9px] text-muted-foreground/60 italic mr-auto">Clique nas notas no braço para ouvir. Use os controles na barra lateral para explorar escalas, acordes e mais.</span>
+        {/* Top bar with instrument switcher and export */}
+        <div className="flex items-center gap-2 mb-4">
+          <InstrumentSwitcher />
+          <span className="text-[9px] text-muted-foreground/60 italic ml-2 mr-auto">
+            {instrument === 'piano' ? 'Clique nas teclas para ouvir.' : 'Clique nas notas no braço para ouvir.'} Use os controles na barra lateral.
+          </span>
           <button
             onClick={() => handleExport('svg')}
             className="px-3 py-1.5 text-xs font-medium rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"

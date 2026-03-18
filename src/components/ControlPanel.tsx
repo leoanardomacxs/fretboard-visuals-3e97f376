@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useInstrument } from '@/contexts/InstrumentContext';
 import {
   ALL_ROOTS,
   ENHARMONIC_MAP,
@@ -121,14 +122,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   noteSize, setNoteSize,
   show24Frets, setShow24Frets,
 }) => {
+  const { instrument } = useInstrument();
+  const isBass = instrument === 'bass';
+  const instrumentLabel = instrument === 'bass' ? 'Bass Theory' : instrument === 'piano' ? 'Piano Theory' : 'Guitar Theory';
+  const instrumentSubtitle = instrument === 'bass' ? 'Estudo de Baixo' : instrument === 'piano' ? 'Estudo de Piano' : 'Estudo Visual Interativo';
+
   return (
     <aside className="w-72 shrink-0 h-screen overflow-y-auto bg-card border-r border-border p-4 space-y-5 scrollbar-thin">
       {/* Header */}
       <div className="flex items-center gap-2 pb-3 border-b border-border">
-        <span className="text-2xl font-bold">GT</span>
+        <span className="text-2xl font-bold">{instrument === 'bass' ? 'BT' : instrument === 'piano' ? 'PT' : 'GT'}</span>
         <div>
-          <h1 className="text-base font-bold text-foreground leading-tight">Guitar Theory</h1>
-          <p className="text-xs text-muted-foreground">Estudo Visual Interativo</p>
+          <h1 className="text-base font-bold text-foreground leading-tight">{instrumentLabel}</h1>
+          <p className="text-xs text-muted-foreground">{instrumentSubtitle}</p>
         </div>
       </div>
 
@@ -185,50 +191,53 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         )}
       </Section>
 
-      {/* Gerador de Acordes — botão exclusivo */}
-      <div>
-        <button
-          onClick={() => { playClick(500); setViewMode('chord-generator'); }}
-          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-            viewMode === 'chord-generator'
-              ? 'bg-primary text-primary-foreground shadow-md'
-              : 'bg-secondary text-foreground hover:bg-secondary/80'
-          }`}
-        >
-          Gerador de Acordes
-        </button>
-        
-      </div>
+      {/* Gerador de Acordes — botão exclusivo (hidden for bass) */}
+      {!isBass && (
+        <div>
+          <button
+            onClick={() => { playClick(500); setViewMode('chord-generator'); }}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              viewMode === 'chord-generator'
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'bg-secondary text-foreground hover:bg-secondary/80'
+            }`}
+          >
+            Gerador de Acordes
+          </button>
+        </div>
+      )}
 
       {/* Progressões — botão exclusivo */}
-      <div>
-        <button
-          onClick={() => { playClick(500); setViewMode('progressions'); }}
-          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-            viewMode === 'progressions'
-              ? 'bg-primary text-primary-foreground shadow-md'
-              : 'bg-secondary text-foreground hover:bg-secondary/80'
-          }`}
-        >
-          Progressões
-        </button>
-        
-      </div>
+      {!isBass && (
+        <div>
+          <button
+            onClick={() => { playClick(500); setViewMode('progressions'); }}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              viewMode === 'progressions'
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'bg-secondary text-foreground hover:bg-secondary/80'
+            }`}
+          >
+            Progressões
+          </button>
+        </div>
+      )}
 
       {/* Campo Harmônico — botão exclusivo */}
-      <div>
-        <button
-          onClick={() => { playClick(500); setViewMode('harmonic-field-view'); }}
-          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-            viewMode === 'harmonic-field-view'
-              ? 'bg-primary text-primary-foreground shadow-md'
-              : 'bg-secondary text-foreground hover:bg-secondary/80'
-          }`}
-        >
-          Campo Harmônico
-        </button>
-        
-      </div>
+      {!isBass && (
+        <div>
+          <button
+            onClick={() => { playClick(500); setViewMode('harmonic-field-view'); }}
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              viewMode === 'harmonic-field-view'
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'bg-secondary text-foreground hover:bg-secondary/80'
+            }`}
+          >
+            Campo Harmônico
+          </button>
+        </div>
+      )}
 
       {/* Escala */}
       <Section title="Escala" collapsible defaultOpen={false}>
@@ -264,7 +273,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       {/* Visualização */}
       <Section title="Visualização" collapsible defaultOpen={false}>
         <div className="space-y-0.5">
-          {VIEW_MODES.map(m => (
+          {VIEW_MODES.filter(m => {
+            // For bass, hide chord-specific views
+            if (isBass && ['chord', 'improvisation', 'chord-generator'].includes(m.value)) return false;
+            return true;
+          }).map(m => (
             <button
               key={m.value}
               onClick={() => { playClick(700); setViewMode(m.value); }}
