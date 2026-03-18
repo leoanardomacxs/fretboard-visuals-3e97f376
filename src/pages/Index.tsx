@@ -283,11 +283,15 @@ const Index: React.FC = () => {
         return renderImprovisationView();
 
       case 'chord-generator':
-      if (instrument === 'piano') {
-        return <PianoChordGenerator root={root} setRoot={setRoot} />;
+  if (instrument === 'piano') {
+    return <PianoChordGenerator root={root} setRoot={setRoot} />;
   }
 
-  return <ChordGeneratorView root={root} setRoot={setRoot} />;
+  return <ChordGeneratorView 
+            root={root} 
+            setRoot={setRoot} 
+            instrument={instrument === 'ukulele' ? 'ukulele' : 'guitar'} 
+         />;
 
       case 'progressions':
         return <ProgressionGeneratorView root={root} setRoot={setRoot} />;

@@ -29,7 +29,7 @@ const INSTRUMENT_CONFIG = {
 interface ChordGeneratorViewProps {
   root: string;
   setRoot: (r: string) => void;
-  instrument: 'guitar';
+  instrument: 'guitar' | 'ukulele';
 }
 
 const TRIAD_TYPES = ['major', 'minor', 'dim', 'aug', 'sus2', 'sus4'];
