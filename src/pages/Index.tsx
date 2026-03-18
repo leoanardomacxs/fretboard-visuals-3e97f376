@@ -1,28 +1,36 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import GuitarFretboard from '@/components/GuitarFretboard';
+import BassFretboard from '@/components/BassFretboard';
+import PianoKeyboard from '@/components/PianoKeyboard';
 import ControlPanel, { type ViewMode, DEGREE_PALETTES, NOTE_PALETTES, FUNCTION_PALETTES } from '@/components/ControlPanel';
 import ChordGeneratorView from '@/components/ChordGeneratorView';
 import ProgressionGeneratorView from '@/components/ProgressionGeneratorView';
 import HarmonicFieldView from '@/components/HarmonicFieldView';
 import ScaleInfoPanel from '@/components/ScaleInfoPanel';
+import InstrumentSwitcher from '@/components/InstrumentSwitcher';
+import { useInstrument } from '@/contexts/InstrumentContext';
 import {
   getScale,
   getHarmonicField,
   getHarmonicFieldForScale,
   getFretboardNotes,
+  getBassFretboardNotes,
   filterByScale,
   filterByNotes,
   getArpeggio,
   getRelatedPentatonic,
   useFlats,
+  getScaleDegree,
+  getIntervalName,
+  getNoteIndex,
   type ChordInfo,
   type FretNote,
   SCALE_FORMULAS,
-  getNoteIndex,
   getNoteName,
 } from '@/lib/musicTheory';
 
 const allFretNotes = getFretboardNotes(24);
+const allBassFretNotes = getBassFretboardNotes(24);
 
 const Index: React.FC = () => {
   const [root, setRoot] = useState('C');
