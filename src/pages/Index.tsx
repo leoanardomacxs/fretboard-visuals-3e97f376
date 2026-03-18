@@ -60,10 +60,11 @@ const Index: React.FC = () => {
 
   // Auto-switch timbre when changing instrument
   useEffect(() => {
-    const { updateAudioSettings } = require('@/lib/audioEngine');
-    if (instrument === 'bass') updateAudioSettings({ timbre: 'bass' });
-    else if (instrument === 'piano') updateAudioSettings({ timbre: 'piano' });
-    else updateAudioSettings({ timbre: 'guitar' });
+    import('@/lib/audioEngine').then(({ updateAudioSettings }) => {
+      if (instrument === 'bass') updateAudioSettings({ timbre: 'bass' });
+      else if (instrument === 'piano') updateAudioSettings({ timbre: 'piano' });
+      else updateAudioSettings({ timbre: 'guitar' });
+    });
   }, [instrument]);
 
   useEffect(() => {
