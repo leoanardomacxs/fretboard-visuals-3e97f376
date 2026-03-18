@@ -273,7 +273,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       {/* Visualização */}
       <Section title="Visualização" collapsible defaultOpen={false}>
         <div className="space-y-0.5">
-          {VIEW_MODES.map(m => (
+          {VIEW_MODES.filter(m => {
+            // For bass, hide chord-specific views
+            if (isBass && ['chord', 'improvisation', 'chord-generator'].includes(m.value)) return false;
+            return true;
+          }).map(m => (
             <button
               key={m.value}
               onClick={() => { playClick(700); setViewMode(m.value); }}
