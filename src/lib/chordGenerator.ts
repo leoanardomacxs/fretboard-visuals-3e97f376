@@ -787,3 +787,150 @@ export function getChordTypeCategories(): { category: string; types: { key: stri
 export function getChordDisplayName(root: string, typeLabel: string): string {
   return `${root}${typeLabel}`;
 }
+
+// ========== UKULELE CHORD GENERATION ==========
+
+export const UKULELE_OPEN_STRINGS_MIDI = [67, 60, 64, 69]; // G4, C4, E4, A4
+export const UKULELE_OPEN_STRINGS_SEMI = [7, 0, 4, 9]; // G, C, E, A in semitones from C
+
+export function generateUkuleleChordVoicings(root: string, chordType: string, maxResults = 30): ChordVoicing[] {
+  const typeDef = CHORD_TYPES[chordType];
+  if (!typeDef) return [];
+
+  const rootIdx = getNoteIndex(root);
+  const chordPitchClasses = new Set(typeDef.intervals.map(i => (rootIdx + i) % 12));
+  const voicings: ChordVoicing[] = [];
+
+  const stringOptions: number[][] = [];
+  for (let s = 0; s < 4; s++) {
+    const options: number[] = [];
+    for (let f = 0; f <= 15; f++) {
+      if (chordPitchClasses.has((UKULELE_OPEN_STRINGS_MIDI[s] + f) % 12)) {
+        options.push(f);
+      }
+    }
+    stringOptions.push(options);
+  }
+
+  for (const f0 of stringOptions[0]) {
+    for (const f1 of stringOptions[1]) {
+      for (const f2 of stringOptions[2]) {
+        for (const f3 of stringOptions[3]) {
+          const fretsArr = [f0, f1, f2, f3];
+          const fretted = fretsArr.filter(f => f > 0);
+
+          if (fretted.length > 0) {
+            const minF = Math.min(...fretted);
+            const maxF = Math.max(...fretted);
+            if (maxF - minF > 4) continue;
+          }
+
+          // Check all pitch classes present
+          const present = new Set<number>();
+          for (let s = 0; s < 4; s++) {
+            present.add((UKULELE_OPEN_STRINGS_MIDI[s] + fretsArr[s]) % 12);
+          }
+
+          // For extended chords, allow missing 5th
+          let allPresent = true;
+          if (typeDef.intervals.length >= 5) {
+            const fifthPitch = (rootIdx + 7) % 12;
+            for (const pc of chordPitchClasses) {
+              if (pc === fifthPitch && !present.has(pc)) continue;
+              if (!present.has(pc)) { allPresent = false; break; }
+            }
+          } else {
+            for (const pc of chordPitchClasses) {
+              if (!present.has(pc)) { allPresent = false; break; }
+            }
+          }
+          if (!allPresent) continue;
+          if (!present.has(rootIdx)) continue;
+
+          // Score
+          const minFret = fretted.length > 0 ? Math.min(...fretted) : 0;
+          const maxFret = fretted.length > 0 ? Math.max(...fretted) : 0;
+          const span = maxFret - minFret;
+          const stretchPenalty = span <= 1 ? 0 : span === 2 ? 4 : span === 3 ? 12 : 25;
+          const positionPenalty = minFret === 0 ? 0 : minFret <= 3 ? 2 : minFret <= 5 ? 5 : 10;
+          const openBonus = fretsArr.filter(f => f === 0).length * -3;
+          const fingerCount = fretted.length;
+          const fingerPenalty = fingerCount <= 2 ? 0 : fingerCount === 3 ? 5 : 12;
+
+          // Root in bass (C4=60 is lowest on ukulele)
+          const midiNotes = fretsArr.map((f, s) => UKULELE_OPEN_STRINGS_MIDI[s] + f);
+          const lowestMidi = Math.min(...midiNotes);
+          const lowestIdx = midiNotes.indexOf(lowestMidi);
+          const rootInBass = (UKULELE_OPEN_STRINGS_MIDI[lowestIdx] + fretsArr[lowestIdx]) % 12 === rootIdx;
+          const rootBassBonus = rootInBass ? -6 : 3;
+
+          const score = stretchPenalty + positionPenalty + openBonus + fingerPenalty + rootBassBonus;
+
+          // Assign fingers
+          const fingers: (number | null)[] = [null, null, null, null];
+          const frettedPos = fretsArr
+            .map((f, s) => ({ f, s }))
+            .filter(x => x.f > 0)
+            .sort((a, b) => a.f - b.f);
+
+          let barre: ChordVoicing['barreInfo'] = null;
+          let fIdx = 1;
+
+          if (frettedPos.length >= 2) {
+            const mF = Math.min(...frettedPos.map(x => x.f));
+            const onMin = frettedPos.filter(x => x.f === mF);
+            if (onMin.length >= 2) {
+              const fromS = Math.min(...onMin.map(x => x.s));
+              const toS = Math.max(...onMin.map(x => x.s));
+              let continuous = true;
+              for (let s = fromS; s <= toS; s++) {
+                if (fretsArr[s] < mF) { continuous = false; break; }
+              }
+              if (continuous) {
+                barre = { fret: mF, fromString: fromS, toString: toS };
+                for (let s = fromS; s <= toS; s++) {
+                  if (fretsArr[s] <= mF) fingers[s] = 1;
+                }
+                fIdx = 2;
+              }
+            }
+          }
+
+          for (const pos of frettedPos) {
+            if (fingers[pos.s] === null) {
+              if (fIdx > 4) break;
+              fingers[pos.s] = fIdx++;
+            }
+          }
+
+          if (fIdx > 5) continue;
+
+          voicings.push({
+            root,
+            typeName: chordType,
+            typeLabel: typeDef.label,
+            frets: fretsArr as any,
+            fingers,
+            barreInfo: barre,
+            startFret: fretted.length > 0 ? minFret : 0,
+            score,
+          });
+        }
+      }
+    }
+  }
+
+  // Deduplicate
+  const seen = new Set<string>();
+  const unique: ChordVoicing[] = [];
+  for (const v of voicings) {
+    const key = v.frets.join('-');
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(v);
+    }
+  }
+
+  unique.sort((a, b) => a.score - b.score || a.startFret - b.startFret);
+  return unique.slice(0, maxResults);
+}

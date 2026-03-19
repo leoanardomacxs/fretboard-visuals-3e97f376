@@ -362,7 +362,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot, 
                       style={{ animationDelay: `${i * 30}ms` }}
                       onClick={() => playChordFromFrets(v.frets)}
                     >
-                      <ChordDiagram voicing={v} width={140} showNotes={showNotes} />
+                      <ChordDiagram voicing={v} width={140} showNotes={showNotes} openStringsSemi={chordDiagramSemi} />
                       <div className="mt-1.5 flex flex-col items-center gap-0.5">
                         <span className="text-[9px] text-muted-foreground">
                           Cordas {v.stringSet} • Casa {v.startFret || 'aberta'}

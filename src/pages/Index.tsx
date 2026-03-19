@@ -194,14 +194,14 @@ const Index: React.FC = () => {
     );
   };
 
-  const instrumentLabel = instrument === 'bass' ? 'Baixo' : instrument === 'piano' ? 'Piano' : 'Guitarra';
+  const instrumentLabel = instrument === 'bass' ? 'Baixo' : instrument === 'piano' ? 'Piano' : instrument === 'ukulele' ? 'Ukulele' : 'Guitarra';
   // For bass, hide chord-specific views
   const isBass = instrument === 'bass';
   const isPiano = instrument === 'piano';
 
   const renderMainView = () => {
     // Bass: redirect chord views to scale views
-    if (isBass && (viewMode === 'chord' || viewMode === 'chord-generator' || viewMode === 'improvisation')) {
+    if (isBass && (viewMode === 'chord' || viewMode === 'chord-generator' || viewMode === 'improvisation' || viewMode === 'progressions' || viewMode === 'harmonic-field-view')) {
       return (
         <div className="space-y-4">
           <ViewHeader title={`${root} ${scaleType} — ${instrumentLabel}`} subtitle={`${getScale(root, scaleType).join(' – ')}`} />
