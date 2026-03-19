@@ -294,7 +294,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot, 
                 style={{ animationDelay: `${i * 20}ms` }}
                 onClick={() => playChordFromFrets(v.frets)}
               >
-                <ChordDiagram voicing={v} width={140} showNotes={showNotes} />
+                <ChordDiagram voicing={v} width={140} showNotes={showNotes} openStringsSemi={chordDiagramSemi} />
                 <div className="mt-1 text-[10px] text-muted-foreground font-mono">
                   {v.frets.map(f => f === null ? 'X' : String(f)).join(' ')}
                 </div>
