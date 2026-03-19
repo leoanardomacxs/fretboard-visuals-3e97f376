@@ -8,9 +8,12 @@ import {
   useFlats,
   spellChordNotes,
   spellScale,
+  getDegree,
 } from '@/lib/musicTheory';
-import { generateChordVoicings } from '@/lib/chordGenerator';
+import { generateChordVoicings, generateUkuleleChordVoicings, UKULELE_OPEN_STRINGS_SEMI } from '@/lib/chordGenerator';
 import ChordDiagram from './ChordDiagram';
+import PianoKeyboard from './PianoKeyboard';
+import { useInstrument } from '@/contexts/InstrumentContext';
 import { playChordFromFrets, playClick, noteNameToMidi, playChord } from '@/lib/audioEngine';
 
 interface HarmonicFieldViewProps {
@@ -126,7 +129,6 @@ function getTetradField(root: string, scaleType: string): Array<ChordInfo & { se
 /** Get secondary dominant for a degree */
 function getSecondaryDominant(targetRoot: string): { name: string; root: string; notes: string[]; chordType: string } {
   const targetSemi = getNoteIndex(targetRoot);
-  // V7 of the target: root is a 5th above = 7 semitones
   const domSemi = (targetSemi + 7) % 12;
   const flats = useFlats(targetRoot);
   const domRoot = getNoteName(domSemi, flats);
@@ -144,17 +146,14 @@ function getIIVI(targetRoot: string): Array<{ name: string; root: string; notes:
   const targetSemi = getNoteIndex(targetRoot);
   const flats = useFlats(targetRoot);
   
-  // ii of the target key = 2 semitones above root
   const iiSemi = (targetSemi + 2) % 12;
   const iiRoot = getNoteName(iiSemi, flats);
   const iiNotes = spellChordNotes(iiRoot, [0, 3, 7, 10]);
   
-  // V of the target key = 7 semitones above root
   const vSemi = (targetSemi + 7) % 12;
   const vRoot = getNoteName(vSemi, flats);
   const vNotes = spellChordNotes(vRoot, [0, 4, 7, 10]);
   
-  // I of the target
   const iNotes = spellChordNotes(targetRoot, [0, 4, 7, 11]);
   
   return [
@@ -165,6 +164,10 @@ function getIIVI(targetRoot: string): Array<{ name: string; root: string; notes:
 }
 
 const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) => {
+  const { instrument } = useInstrument();
+  const isPiano = instrument === 'piano';
+  const isUkulele = instrument === 'ukulele';
+
   const [scaleType, setScaleType] = useState('Maior');
   const [viewTab, setViewTab] = useState<'triads' | 'tetrads' | 'secondary' | 'ii-v-i'>('triads');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -174,9 +177,13 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
   const tetradField = useMemo(() => getTetradField(root, scaleType), [root, scaleType]);
 
   const getVoicing = useCallback((chordRoot: string, chordType: string) => {
-    const voicings = generateChordVoicings(chordRoot, chordType, 1);
+    if (isPiano) return null;
+    const genFn = isUkulele ? generateUkuleleChordVoicings : generateChordVoicings;
+    const voicings = genFn(chordRoot, chordType, 1);
     return voicings[0] || null;
-  }, []);
+  }, [isPiano, isUkulele]);
+
+  const chordDiagramSemi = isUkulele ? UKULELE_OPEN_STRINGS_SEMI : undefined;
 
   const qualityToType = (quality: string): string => {
     const map: Record<string, string> = {
@@ -185,15 +192,27 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
     return map[quality] || 'major';
   };
 
+  const renderPianoChord = (notes: string[]) => (
+    <PianoKeyboard
+      highlightedNotes={notes.map((note, i) => ({
+        note,
+        degree: getDegree(note, notes[0]),
+        isRoot: i === 0,
+      }))}
+      octaves={2}
+      startOctave={3}
+      colorMode="degree"
+      compact
+    />
+  );
+
   /** Play a single chord with a specific bass MIDI as reference for voicing */
   const playChordWithBass = useCallback((notes: string[], bassMidi: number) => {
-    // Place all chord notes starting from bassMidi upward
     const rootMidi = bassMidi;
     const voiced: number[] = [rootMidi];
     for (let j = 1; j < notes.length; j++) {
-      let noteMidi = noteNameToMidi(notes[j], 0); // get raw semitone class
+      let noteMidi = noteNameToMidi(notes[j], 0);
       const semi = noteMidi % 12;
-      // Place this note just above the root
       noteMidi = rootMidi - (rootMidi % 12) + semi;
       while (noteMidi <= rootMidi) noteMidi += 12;
       voiced.push(noteMidi);
@@ -202,26 +221,21 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
     playChord(uniqueNotes, 1.0);
   }, []);
 
-  /** Play a chord for individual clicks (non-sequential) */
   const playChordNotes = useCallback((notes: string[], _keyRoot?: string, chordRoot?: string) => {
     const bassMidi = noteNameToMidi(notes[0], 3);
     playChordWithBass(notes, bassMidi);
   }, [playChordWithBass]);
 
-  /** Play all chords sequentially with ascending pitch — each chord root is placed
-   *  just above the previous chord's root, creating a natural ascending harmonic field */
   const playAllChords = useCallback(async (chords: Array<{ notes: string[]; root: string }>) => {
     if (isPlaying) return;
     setIsPlaying(true);
 
-    // Start the first chord root at octave 3
     let currentBassMidi = noteNameToMidi(chords[0].root, 3);
 
     for (let i = 0; i < chords.length; i++) {
       setActiveIdx(i);
 
       if (i > 0) {
-        // Place this chord's root just above the previous chord's root
         const semi = noteNameToMidi(chords[i].root, 0) % 12;
         let nextRoot = currentBassMidi - (currentBassMidi % 12) + semi;
         while (nextRoot <= currentBassMidi) nextRoot += 12;
@@ -263,7 +277,13 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
         )}
         <span className="text-sm font-bold text-foreground mb-1">{chord.name}</span>
         <span className="text-[9px] text-muted-foreground mb-2">{chord.notes.join(' · ')}</span>
-        {voicing && <ChordDiagram voicing={voicing} width={130} />}
+        {isPiano ? (
+          <div className="w-full">
+            {renderPianoChord(chord.notes)}
+          </div>
+        ) : (
+          voicing && <ChordDiagram voicing={voicing} width={130} openStringsSemi={chordDiagramSemi} />
+        )}
         {extra}
       </div>
     );
@@ -481,6 +501,7 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
               {triadField.map((ch, i) => {
                 const secDom = getSecondaryDominant(ch.root);
                 const voicing = getVoicing(secDom.root, '7');
+                const targetVoicing = getVoicing(ch.root, qualityToType(ch.quality));
                 return (
                   <div key={i} className={`flex items-center gap-4 p-3 rounded-lg border ${DEGREE_COLORS[i + 1]}`}>
                     <div className="flex-1 min-w-0">
@@ -496,25 +517,35 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
                       </span>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      {voicing && (
-                        <div
-                          className="cursor-pointer hover:shadow-md transition-shadow"
-                          onClick={() => playChordFromFrets(voicing.frets)}
-                        >
-                          <ChordDiagram voicing={voicing} width={100} />
-                        </div>
-                      )}
-                      {(() => {
-                        const targetVoicing = getVoicing(ch.root, qualityToType(ch.quality));
-                        return targetVoicing ? (
-                          <div
-                            className="cursor-pointer hover:shadow-md transition-shadow"
-                            onClick={() => playChordFromFrets(targetVoicing.frets)}
-                          >
-                            <ChordDiagram voicing={targetVoicing} width={100} />
+                      {isPiano ? (
+                        <>
+                          <div className="w-[100px] cursor-pointer" onClick={() => playChordNotes(secDom.notes)}>
+                            {renderPianoChord(secDom.notes)}
                           </div>
-                        ) : null;
-                      })()}
+                          <div className="w-[100px] cursor-pointer" onClick={() => playChordNotes(ch.notes)}>
+                            {renderPianoChord(ch.notes)}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {voicing && (
+                            <div
+                              className="cursor-pointer hover:shadow-md transition-shadow"
+                              onClick={() => playChordFromFrets(voicing.frets)}
+                            >
+                              <ChordDiagram voicing={voicing} width={100} openStringsSemi={chordDiagramSemi} />
+                            </div>
+                          )}
+                          {targetVoicing && (
+                            <div
+                              className="cursor-pointer hover:shadow-md transition-shadow"
+                              onClick={() => playChordFromFrets(targetVoicing.frets)}
+                            >
+                              <ChordDiagram voicing={targetVoicing} width={100} openStringsSemi={chordDiagramSemi} />
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -575,7 +606,13 @@ const HarmonicFieldView: React.FC<HarmonicFieldViewProps> = ({ root, setRoot }) 
                             <span className="text-[10px] font-mono text-muted-foreground">{chord.label}</span>
                             <span className="text-sm font-bold text-foreground">{chord.name}</span>
                             <span className="text-[9px] text-muted-foreground mb-2">{chord.notes.join(' · ')}</span>
-                            {voicing && <ChordDiagram voicing={voicing} width={110} />}
+                            {isPiano ? (
+                              <div className="w-full">
+                                {renderPianoChord(chord.notes)}
+                              </div>
+                            ) : (
+                              voicing && <ChordDiagram voicing={voicing} width={110} openStringsSemi={chordDiagramSemi} />
+                            )}
                             {j < 2 && (
                               <span className="text-muted-foreground text-lg mt-1">→</span>
                             )}

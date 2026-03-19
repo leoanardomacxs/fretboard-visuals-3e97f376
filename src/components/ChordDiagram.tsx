@@ -3,22 +3,24 @@ import type { ChordVoicing } from '@/lib/chordGenerator';
 import { CHORD_TYPES } from '@/lib/chordGenerator';
 import { getChordSpellingMap, useFlats, getNoteName as getMusicNoteName } from '@/lib/musicTheory';
 
-const OPEN_STRINGS_SEMI = [4, 9, 2, 7, 11, 4]; // E A D G B E in semitones from C
+const GUITAR_OPEN_STRINGS_SEMI = [4, 9, 2, 7, 11, 4]; // E A D G B E in semitones from C
 
 interface ChordDiagramProps {
   voicing: ChordVoicing;
   width?: number;
   showNotes?: boolean;
+  openStringsSemi?: number[];
 }
 
 const NUM_FRETS_SHOWN = 5;
 
-const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160, showNotes = false }) => {
+const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160, showNotes = false, openStringsSemi }) => {
   const { frets, fingers, barreInfo, startFret } = voicing;
+  const stringCount = frets.length;
+  const openSemi = openStringsSemi || GUITAR_OPEN_STRINGS_SEMI;
 
   const padding = { top: 48, bottom: 20, left: 28, right: 16 };
   const nutHeight = 4;
-  const stringCount = 6;
   const stringSpacing = (width - padding.left - padding.right) / (stringCount - 1);
   const fretSpacing = 28;
   const totalFretHeight = NUM_FRETS_SHOWN * fretSpacing;
@@ -42,7 +44,7 @@ const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160, showN
   const flats = useFlats(voicing.root);
 
   const getChordNoteName = (stringIdx: number, fret: number): string => {
-    const semitone = (OPEN_STRINGS_SEMI[stringIdx] + fret) % 12;
+    const semitone = (openSemi[stringIdx] + fret) % 12;
     if (spellingMap && spellingMap.has(semitone)) {
       return spellingMap.get(semitone)!;
     }
@@ -100,7 +102,6 @@ const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160, showN
         }
         if (f === 0) {
           if (showNotes) {
-            // Show note name for open strings
             return (
               <text
                 key={`open-${s}`}
@@ -166,7 +167,7 @@ const ChordDiagram: React.FC<ChordDiagramProps> = ({ voicing, width = 160, showN
           x2={getX(s)}
           y2={topY + totalFretHeight}
           stroke="hsl(var(--foreground))"
-          strokeWidth={0.6 + (5 - s) * 0.1}
+          strokeWidth={0.6 + ((stringCount - 1) - s) * (stringCount === 4 ? 0.15 : 0.1)}
           opacity={0.35}
         />
       ))}

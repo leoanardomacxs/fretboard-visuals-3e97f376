@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import ChordDiagram from './ChordDiagram';
-import { generateChordVoicings, generateTriadInversions, getChordTypeCategories, CHORD_TYPES } from '@/lib/chordGenerator';
+import { generateChordVoicings, generateTriadInversions, generateUkuleleChordVoicings, getChordTypeCategories, CHORD_TYPES, UKULELE_OPEN_STRINGS_SEMI } from '@/lib/chordGenerator';
 import type { TriadVoicing, ChordVoicing } from '@/lib/chordGenerator';
 import { ALL_ROOTS, NOTES, spellChordNotes } from '@/lib/musicTheory';
 import { ChevronDown } from 'lucide-react';
@@ -63,32 +63,35 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot, 
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const genFn = instrument === 'ukulele' ? generateUkuleleChordVoicings : generateChordVoicings;
+
   const voicings = useMemo(() => {
     if (selectedType === 'all') {
       const allVoicings: (ChordVoicing & { displayType?: string })[] = [];
       for (const [key, def] of Object.entries(CHORD_TYPES)) {
-        if (key === 'maj9no5') continue; // skip variant in "all" view
-        const v = generateChordVoicings(root, key, 3);
+        if (key === 'maj9no5') continue;
+        const v = genFn(root, key, 3);
         v.forEach(voicing => allVoicings.push({ ...voicing, typeLabel: def.label || key }));
       }
       allVoicings.sort((a, b) => a.startFret - b.startFret || a.score - b.score);
       return allVoicings;
     }
-    // For maj9, also include no5 voicings
     if (selectedType === 'maj9') {
-      const full = generateChordVoicings(root, 'maj9', 25);
-      const no5 = generateChordVoicings(root, 'maj9no5', 25);
+      const full = genFn(root, 'maj9', 25);
+      const no5 = genFn(root, 'maj9no5', 25);
       const combined = [...full, ...no5];
       combined.sort((a, b) => a.score - b.score || a.startFret - b.startFret);
       return combined.slice(0, 40);
     }
-    return generateChordVoicings(root, selectedType, 40);
-  }, [root, selectedType]);
+    return genFn(root, selectedType, 40);
+  }, [root, selectedType, instrument]);
 
   const triadInversions = useMemo(
-    () => generateTriadInversions(root, selectedType),
-    [root, selectedType]
+    () => instrument === 'ukulele' ? [] : generateTriadInversions(root, selectedType),
+    [root, selectedType, instrument]
   );
+
+  const chordDiagramSemi = instrument === 'ukulele' ? UKULELE_OPEN_STRINGS_SEMI : undefined;
 
   const typeDef = selectedType === 'all' ? null : CHORD_TYPES[selectedType];
   const chordName = selectedType === 'all' ? `${root} — Todos` : `${root}${typeDef?.label || ''}`;
@@ -291,7 +294,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot, 
                 style={{ animationDelay: `${i * 20}ms` }}
                 onClick={() => playChordFromFrets(v.frets)}
               >
-                <ChordDiagram voicing={v} width={140} showNotes={showNotes} />
+                <ChordDiagram voicing={v} width={140} showNotes={showNotes} openStringsSemi={chordDiagramSemi} />
                 <div className="mt-1 text-[10px] text-muted-foreground font-mono">
                   {v.frets.map(f => f === null ? 'X' : String(f)).join(' ')}
                 </div>
@@ -359,7 +362,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot, 
                       style={{ animationDelay: `${i * 30}ms` }}
                       onClick={() => playChordFromFrets(v.frets)}
                     >
-                      <ChordDiagram voicing={v} width={140} showNotes={showNotes} />
+                      <ChordDiagram voicing={v} width={140} showNotes={showNotes} openStringsSemi={chordDiagramSemi} />
                       <div className="mt-1.5 flex flex-col items-center gap-0.5">
                         <span className="text-[9px] text-muted-foreground">
                           Cordas {v.stringSet} • Casa {v.startFret || 'aberta'}

@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { getHarmonicField, getHarmonicFieldForScale, ALL_ROOTS, type ChordInfo, DEGREE_LABELS, getScale, getNoteIndex, getNoteName, useFlats } from '@/lib/musicTheory';
-import { generateChordVoicings } from '@/lib/chordGenerator';
+import { getHarmonicField, getHarmonicFieldForScale, ALL_ROOTS, type ChordInfo, DEGREE_LABELS, getScale, getNoteIndex, getNoteName, useFlats, getDegree } from '@/lib/musicTheory';
+import { generateChordVoicings, generateUkuleleChordVoicings, UKULELE_OPEN_STRINGS_SEMI } from '@/lib/chordGenerator';
 import ChordDiagram from './ChordDiagram';
+import PianoKeyboard from './PianoKeyboard';
+import { useInstrument } from '@/contexts/InstrumentContext';
 import { playChordFromFrets, playClick, noteNameToMidi, playChord } from '@/lib/audioEngine';
 
 interface ProgressionGeneratorViewProps {
@@ -40,7 +42,6 @@ function generateRandomProgression(harmonicField: ChordInfo[], length = 4): { de
   };
 
   const degrees: number[] = [];
-  // Start on I, IV, or vi
   const starts = [1, 1, 1, 4, 6];
   let current = starts[Math.floor(Math.random() * starts.length)];
   degrees.push(current);
@@ -63,6 +64,10 @@ const FIELD_TYPES = [
 ] as const;
 
 const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ root, setRoot }) => {
+  const { instrument } = useInstrument();
+  const isPiano = instrument === 'piano';
+  const isUkulele = instrument === 'ukulele';
+
   const [fieldType, setFieldType] = useState('Maior');
   const harmonicField = useMemo(() => getHarmonicFieldForScale(root, fieldType), [root, fieldType]);
   const [currentProgression, setCurrentProgression] = useState<{ degrees: number[]; chords: ChordInfo[] } | null>(null);
@@ -101,24 +106,18 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
     if (!currentProgression || isPlaying) return;
     setIsPlaying(true);
 
-    // Track the previous chord's root MIDI to ensure ascending voicing
-    let prevRootMidi = noteNameToMidi(root, 3); // key root as baseline
+    let prevRootMidi = noteNameToMidi(root, 3);
 
     for (let i = 0; i < currentProgression.chords.length; i++) {
       const chord = currentProgression.chords[i];
       setActiveChordIdx(i);
 
-      // Place this chord's root relative to the key root in octave 3,
-      // ensuring it's always at or above the key root
       const semi = noteNameToMidi(chord.root, 0) % 12;
       const keyRootMidi = noteNameToMidi(root, 3);
       let bassMidi = keyRootMidi - (keyRootMidi % 12) + semi;
-      // Ensure bass is at or above key root (within one octave above)
       while (bassMidi < keyRootMidi) bassMidi += 12;
-      // But don't go too high (keep within 1 octave above key root)
       while (bassMidi >= keyRootMidi + 12) bassMidi -= 12;
 
-      // Build voicing: root as bass, then stack other notes above
       const voiced: number[] = [bassMidi];
       for (let j = 1; j < chord.notes.length; j++) {
         const noteSemi = noteNameToMidi(chord.notes[j], 0) % 12;
@@ -139,13 +138,31 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
 
   // Get best voicing for display
   const getVoicing = useCallback((chord: ChordInfo) => {
+    if (isPiano) return null; // Piano doesn't use guitar voicings
     const qualityMap: Record<string, string> = {
       'Major': 'major', 'minor': 'minor', 'diminished': 'dim',
     };
     const typeKey = qualityMap[chord.quality] || 'major';
-    const voicings = generateChordVoicings(chord.root, typeKey, 1);
+    const genFn = isUkulele ? generateUkuleleChordVoicings : generateChordVoicings;
+    const voicings = genFn(chord.root, typeKey, 1);
     return voicings[0] || null;
-  }, []);
+  }, [isPiano, isUkulele]);
+
+  const renderPianoChord = (notes: string[]) => (
+    <PianoKeyboard
+      highlightedNotes={notes.map((note, i) => ({
+        note,
+        degree: getDegree(note, notes[0]),
+        isRoot: i === 0,
+      }))}
+      octaves={2}
+      startOctave={3}
+      colorMode="degree"
+      compact
+    />
+  );
+
+  const chordDiagramSemi = isUkulele ? UKULELE_OPEN_STRINGS_SEMI : undefined;
 
   const degreeColors: Record<number, string> = {
     1: 'border-blue-500/50 bg-blue-500/10',
@@ -217,7 +234,6 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
 
       {/* Controls */}
       <div className="flex flex-wrap gap-3 items-center">
-        {/* Key scope toggle */}
         <button
           onClick={() => { setAllKeys(!allKeys); playClick(550); }}
           className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all border ${
@@ -236,7 +252,6 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
           Gerar Aleatória
         </button>
 
-        {/* Ear training display toggle */}
         <button
           onClick={() => {
             playClick(600);
@@ -288,7 +303,6 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
       {/* Current progression display */}
       {currentProgression && (
         <div className="space-y-4 note-appear">
-          {/* Progression title */}
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-bold text-foreground">
               {displayMode === 'hidden'
@@ -297,7 +311,6 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
             </h3>
           </div>
 
-          {/* Chord names row */}
           <div className="flex items-center gap-2 flex-wrap">
             {currentProgression.chords.map((ch, i) => (
               <React.Fragment key={i}>
@@ -313,14 +326,13 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
             ))}
           </div>
 
-          {/* Ear training hint */}
           {displayMode !== 'full' && (
             <p className="text-xs text-muted-foreground italic">
               {displayMode === 'degrees' ? 'Nomes dos acordes ocultos — ouça e tente identificar!' : 'Tudo oculto — treine seu ouvido!'}
             </p>
           )}
 
-          {/* Chord diagrams */}
+          {/* Chord diagrams / piano keyboards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             {currentProgression.chords.map((ch, i) => {
               const voicing = getVoicing(ch);
@@ -333,9 +345,20 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
                   } ${activeChordIdx === i ? 'ring-2 ring-primary shadow-lg scale-105' : ''}`}
                   onClick={() => {
                     if (voicing) playChordFromFrets(voicing.frets);
+                    else {
+                      // Piano or no voicing — play chord notes
+                      const bassMidi = noteNameToMidi(ch.notes[0], 3);
+                      const voiced: number[] = [bassMidi];
+                      for (let j = 1; j < ch.notes.length; j++) {
+                        const semi = noteNameToMidi(ch.notes[j], 0) % 12;
+                        let m = bassMidi - (bassMidi % 12) + semi;
+                        while (m <= bassMidi) m += 12;
+                        voiced.push(m);
+                      }
+                      playChord([...new Set(voiced)].sort((a, b) => a - b), 1.0);
+                    }
                   }}
                 >
-                  {/* Labels based on display mode */}
                   <div className="flex items-center gap-1.5 mb-1">
                     {displayMode === 'full' && (
                       <>
@@ -351,8 +374,15 @@ const ProgressionGeneratorView: React.FC<ProgressionGeneratorViewProps> = ({ roo
                     )}
                   </div>
 
-                  {/* Diagram: show in full, blur in degrees, hide in hidden */}
-                  {voicing && displayMode === 'full' && <ChordDiagram voicing={voicing} width={130} />}
+                  {displayMode === 'full' && (
+                    isPiano ? (
+                      <div className="w-full">
+                        {renderPianoChord(ch.notes)}
+                      </div>
+                    ) : (
+                      voicing && <ChordDiagram voicing={voicing} width={130} openStringsSemi={chordDiagramSemi} />
+                    )
+                  )}
                   {displayMode === 'degrees' && (
                     <div className="w-[130px] h-[140px] flex items-center justify-center">
                       <span className="text-4xl font-black text-foreground/80">{ch.romanNumeral}</span>
