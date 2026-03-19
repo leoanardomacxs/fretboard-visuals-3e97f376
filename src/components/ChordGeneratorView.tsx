@@ -87,9 +87,11 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot, 
   }, [root, selectedType, instrument]);
 
   const triadInversions = useMemo(
-    () => generateTriadInversions(root, selectedType),
-    [root, selectedType]
+    () => instrument === 'ukulele' ? [] : generateTriadInversions(root, selectedType),
+    [root, selectedType, instrument]
   );
+
+  const chordDiagramSemi = instrument === 'ukulele' ? UKULELE_OPEN_STRINGS_SEMI : undefined;
 
   const typeDef = selectedType === 'all' ? null : CHORD_TYPES[selectedType];
   const chordName = selectedType === 'all' ? `${root} — Todos` : `${root}${typeDef?.label || ''}`;
