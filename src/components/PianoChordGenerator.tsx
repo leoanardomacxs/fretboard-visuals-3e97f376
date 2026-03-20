@@ -19,7 +19,6 @@ const CHORD_GROUPS = {
   'EXTENSÕES': ['6', '9', 'add9', 'madd9', 'm6', 'maj9', 'm9'],
 }
 
-
 const TYPE_DISPLAY: Record<string, string> = {
   major: '',
   minor: 'm',
@@ -50,6 +49,26 @@ const CHORD_PRIORITY = [
   'aug7','7sus4','add9','madd9','6','m6','9','maj9','m9',
 ]
 
+// ✅ INFO CENTRALIZADA (agora única e limpa)
+const getChordInfo = (type: string) => {
+  const map: Record<string, unknown> = {
+    major: { formula: '1 - 3 - 5', feeling: 'Feliz, estável, brilhante' },
+    minor: { formula: '1 - b3 - 5', feeling: 'Triste, introspectivo, emocional' },
+    dim: { formula: '1 - b3 - b5', feeling: 'Tenso, instável, dramático' },
+    aug: { formula: '1 - 3 - #5', feeling: 'Suspenso, misterioso' },
+    '7': { formula: '1 - 3 - 5 - b7', feeling: 'Bluesy, dominante' },
+    maj7: { formula: '1 - 3 - 5 - 7', feeling: 'Suave, jazzístico' },
+    min7: { formula: '1 - b3 - 5 - b7', feeling: 'Soul, relaxado' },
+    sus2: { formula: '1 - 2 - 5', feeling: 'Aberto, flutuante' },
+    sus4: { formula: '1 - 4 - 5', feeling: 'Suspenso, expectante' },
+  }
+
+  return map[type] || {
+    formula: '—',
+    feeling: 'Caráter harmônico complexo'
+  }
+}
+
 const PianoChordGenerator: React.FC<Props> = ({
   root,
   setRoot,
@@ -59,58 +78,55 @@ const PianoChordGenerator: React.FC<Props> = ({
 
   const [selectedType, setSelectedType] = useState('maj7')
   const [typeOpen, setTypeOpen] = useState(false)
-  const typeRef = useRef<HTMLDivElement>(null)
+  const [rootOpen, setRootOpen] = useState(false)
   const [showAll, setShowAll] = useState(false)
 
-  // 🔽 dropdown
-  const [rootOpen, setRootOpen] = useState(false)
+  const typeRef = useRef<HTMLDivElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
 
+
+  // ✅ CLICK OUTSIDE
   useEffect(() => {
-  const handler = (e: MouseEvent) => {
-    if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-      setRootOpen(false)
+    const handler = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setRootOpen(false)
+      }
+      if (typeRef.current && !typeRef.current.contains(e.target as Node)) {
+        setTypeOpen(false)
+      }
     }
-    if (typeRef.current && !typeRef.current.contains(e.target as Node)) {
-      setTypeOpen(false)
-    }
-  }
 
-  document.addEventListener('mousedown', handler)
-  return () => document.removeEventListener('mousedown', handler)
-}, [])
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
+  // ✅ CHORDS
   const chords = useMemo(() => {
 
-    // 🔘 SHOW ALL → todos os tipos da mesma raiz
     if (showAll) {
-      const result = []
+      return Object.entries(CHORD_TYPES)
+        .filter(([_, def]) => def?.intervals)
+        .map(([key, def]) => {
+          const notes = spellChordNotes(root, def.intervals)
 
-      for (const [key, def] of Object.entries(CHORD_TYPES)) {
-        if (!def?.intervals) continue
-
-        const notes = spellChordNotes(root, def.intervals)
-
-        result.push({
-          name: `${root}${TYPE_DISPLAY[key] ?? def.label ?? ''}`,
-          notes,
-          highlighted: notes.map((note, i) => ({
-            note,
-            degree: getDegree(note, root) ?? 1,
-            isRoot: i === 0
-          })),
-          type: key,
+          return {
+            name: `${root}${TYPE_DISPLAY[key] ?? def.label ?? ''}`,
+            notes,
+            type: key,
+            highlighted: notes.map((note, i) => ({
+              note,
+              degree: getDegree(note, root) ?? 1,
+              isRoot: i === 0
+            }))
+          }
         })
-      }
-
-      return result.sort((a, b) => {
-        const aIndex = CHORD_PRIORITY.indexOf(a.type)
-        const bIndex = CHORD_PRIORITY.indexOf(b.type)
-        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex)
-      })
+        .sort((a, b) => {
+          const ai = CHORD_PRIORITY.indexOf(a.type)
+          const bi = CHORD_PRIORITY.indexOf(b.type)
+          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+        })
     }
 
-    // 🔘 SINGLE CHORD
     const def = CHORD_TYPES[selectedType]
     if (!def?.intervals) return []
 
@@ -119,41 +135,31 @@ const PianoChordGenerator: React.FC<Props> = ({
     return [{
       name: `${root}${TYPE_DISPLAY[selectedType] ?? ''}`,
       notes,
+      type: selectedType,
       highlighted: notes.map((note, i) => ({
         note,
         degree: getDegree(note, root) ?? 1,
         isRoot: i === 0
-      })),
-      type: selectedType
+      }))
     }]
 
   }, [root, selectedType, showAll])
 
   const playChordSound = (notes: string[]) => {
-    const baseOctave = 3
-    const midi = notes.map((n, i) =>
-      noteNameToMidi(n, baseOctave + Math.floor(i / 2))
-    )
-    playChord(midi)
-  }
+  const midi = notes.map((n, i) =>
+    noteNameToMidi(n, 3 + Math.floor(i / 2))
+  );
+
+  playChord(midi);
+};
 
   return (
     <div className="space-y-8">
 
-      {/* HEADER */}
-      <div>
-        <h2 className="text-xl font-bold">Piano Chord Engine</h2>
-        <p className="text-sm text-muted-foreground">
-          {showAll
-            ? `Todos os acordes de ${root}`
-            : `${root}${TYPE_DISPLAY[selectedType]}`}
-        </p>
-      </div>
-
       {/* CONTROLES */}
       <div className="flex gap-3 flex-wrap">
 
-        {/* 🎼 ROOT DROPDOWN */}
+        {/* ROOT */}
         <div ref={rootRef} className="relative">
           <button
             onClick={() => setRootOpen(!rootOpen)}
@@ -174,9 +180,7 @@ const PianoChordGenerator: React.FC<Props> = ({
                     setRootOpen(false)
                   }}
                   className={`px-3 py-2 text-xs rounded ${
-                    root === n
-                      ? 'bg-primary text-white'
-                      : 'hover:bg-secondary'
+                    root === n ? 'bg-primary text-white' : 'hover:bg-secondary'
                   }`}
                 >
                   {n}
@@ -186,128 +190,134 @@ const PianoChordGenerator: React.FC<Props> = ({
           )}
         </div>
 
-        
-            
-  <div ref={typeRef} className="relative">
+        {/* TYPE */}
+        <div ref={typeRef} className="relative">
+          <button
+            onClick={() => setTypeOpen(!typeOpen)}
+            className="px-4 py-2 rounded-lg border bg-card flex items-center gap-2"
+          >
+            <span className="text-xs text-muted-foreground">Tipo:</span>
+            <span className="font-bold">
+              {TYPE_DISPLAY[selectedType] || selectedType}
+            </span>
+          </button>
 
-    {/* BOTÃO */}
-    <button
-      onClick={() => setTypeOpen(!typeOpen)}
-      className="px-4 py-2 rounded-lg border bg-card flex items-center gap-2"
-    >
-      <span className="text-xs text-muted-foreground">Tipo:</span>
-      <span className="font-bold">
-        {TYPE_DISPLAY[selectedType] || selectedType}
-      </span>
-    </button>
-
-    {/* DROPDOWN */}
-    {typeOpen && (
-      <div className="absolute mt-2 w-80 bg-card border rounded-xl p-4 z-50 shadow-lg max-h-80 overflow-y-auto space-y-4">
-
-        {Object.entries(CHORD_GROUPS).map(([group, types]) => (
-          <div key={group}>
-
-            {/* TÍTULO */}
-            <div className="text-xs text-muted-foreground mb-2">
-              {group}
-            </div>
-
-            {/* GRID */}
-            <div className="grid grid-cols-3 gap-2">
-              {types.map(t => (
-                CHORD_TYPES[t] && (
-                  <button
-                    key={t}
-                    onClick={() => {
-                      setSelectedType(t)
-                      setTypeOpen(false)
-                    }}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium ${
-                      selectedType === t
-                        ? 'bg-primary text-white'
-                        : 'hover:bg-secondary'
-                    }`}
-                  >
-                    {TYPE_DISPLAY[t] || t}
-                  </button>
-                )
+          {typeOpen && (
+            <div className="absolute mt-2 w-80 bg-card border rounded-xl p-4 z-50 shadow-lg max-h-80 overflow-y-auto space-y-4">
+              {Object.entries(CHORD_GROUPS).map(([group, types]) => (
+                <div key={group}>
+                  <div className="text-xs text-muted-foreground mb-2">{group}</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {types.map(t => (
+                      CHORD_TYPES[t] && (
+                        <button
+                          key={t}
+                          onClick={() => {
+                            setSelectedType(t)
+                            setTypeOpen(false)
+                          }}
+                          className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                            selectedType === t
+                              ? 'bg-primary text-white'
+                              : 'hover:bg-secondary'
+                          }`}
+                        >
+                          {TYPE_DISPLAY[t] || t}
+                        </button>
+                      )
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
+          )}
+        </div>
 
-          </div>
-        ))}
-
-      </div>
-    )}
-  </div>
-
-        {/* 🔘 TOGGLE */}
+        {/* TOGGLE */}
         <div
-  onClick={() => setShowAll(!showAll)}
-  className={`flex items-center gap-3 px-4 py-2 rounded-lg border cursor-pointer ${
-    showAll ? 'bg-primary/10 border-primary' : 'bg-card'
-  }`}
->
-  {/* TEXTO */}
-  <span className="text-sm">Mostrar todos</span>
-
-  {/* SWITCH (a chavinha) */}
-  <div
-    className={`w-10 h-5 flex items-center rounded-full p-1 transition ${
-      showAll ? 'bg-primary' : 'bg-muted'
-    }`}
-  >
-    {/* BOLINHA */}
-    <div
-      className={`w-4 h-4 bg-white rounded-full shadow-md transform transition ${
-        showAll ? 'translate-x-5' : 'translate-x-0'
-      }`}
-    />
-  </div>
-</div>
+          onClick={() => setShowAll(!showAll)}
+          className={`flex items-center gap-3 px-4 py-2 rounded-lg border cursor-pointer ${
+            showAll ? 'bg-primary/10 border-primary' : 'bg-card'
+          }`}
+        >
+          <span className="text-sm">Mostrar todos</span>
+          <div className={`w-10 h-5 flex items-center rounded-full p-1 ${showAll ? 'bg-primary' : 'bg-muted'}`}>
+            <div className={`w-4 h-4 bg-white rounded-full transform ${showAll ? 'translate-x-5' : ''}`} />
+          </div>
+        </div>
 
       </div>
 
       {/* GRID */}
       <div className={
-  showAll
-     ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
-      : "w-full flex justify-center items-center"
-}>
+        showAll
+          ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
+          : "w-full flex justify-start"
+      }>
+        {chords.map((chord, i) => {
+          const info = getChordInfo(chord.type)
 
-        {chords.map((chord, i) => (
-          <div
+          return (
+            <div
   key={i}
-  onClick={() => playChordSound(chord.notes)}
+  onClick={() => {
+    if (showAll) {
+      playChordSound(chord.notes)
+    }
+  }}
   className={`cursor-pointer ${
-    showAll
-      ? "p-4 rounded-xl border bg-card hover:shadow-md"
-      : "w-full max-w-[720px] flex flex-col items-center"
-  }`}
+                showAll
+                  ? "p-4 rounded-xl border bg-card hover:shadow-md"
+                  : "w-full max-w-[720px] flex flex-col items-center"
+              }`}
+            >
+
+              <PianoKeyboard
+  highlightedNotes={chord.highlighted}
+  octaves={2}
+  startOctave={2}
+  colorMode={colorMode}
+  colorStage={0}
+  compact={showAll}
+  onNoteClick={(note) => {
+    
+  }}
+/>
+
+              <div className="text-xs mt-2 text-muted-foreground">
+  {`${chord.name} = ${chord.notes.join(' • ')}`}
+</div>
+
+              {/* ✅ CARD DE INFO */}
+              {!showAll && (
+                <div
+  onClick={(e) => {
+    e.stopPropagation() // evita conflito com o container
+    playChordSound(chord.notes)
+  }}
+  className="mt-4 w-full p-4 rounded-xl border bg-card shadow-sm cursor-pointer hover:bg-secondary/40 transition"
 >
-                    <h3 className={`font-bold mb-2 ${
-          showAll ? "text-sm" : "text-xl"
-        }`}>
-          {chord.name}
-        </h3>
+                  
+                  <div className="text-sm font-semibold mb-2">
+                    {chord.name}
+                  </div>
 
-                    <PianoKeyboard
-          highlightedNotes={chord.highlighted}
-          octaves={2} 
-          startOctave={2}
-          colorMode={colorMode}
-          colorStage={0}
-          compact={showAll}
-        />
+                  <div className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Fórmula:</span> {info.formula}
+                  </div>
 
-            <div className="text-xs mt-2 text-muted-foreground">
-              {chord.notes.join(' • ')}
+                  <div className="text-xs text-muted-foreground mt-1">
+                    <span className="font-medium text-foreground">Sensação:</span> {info.feeling}
+                  </div>
+
+                </div>
+              )}
+
             </div>
-          </div>
-        ))}
-
+          )
+        })}
       </div>
+
     </div>
   )
 }

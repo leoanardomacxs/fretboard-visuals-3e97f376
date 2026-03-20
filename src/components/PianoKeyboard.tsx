@@ -142,7 +142,14 @@ const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
       const color = getColor(noteInfo)
 
       whiteKeys.push(
-        <g key={`white-${keyIdx}`} onMouseDown={() => press(midi)} className="cursor-pointer">
+        <g
+  key={`white-${keyIdx}`}
+  onMouseDown={(e) => {
+    e.stopPropagation()
+    press(midi)
+  }}
+  className="cursor-pointer"
+>
 
           <rect
             x={x}
@@ -191,7 +198,14 @@ const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
       const color = getColor(noteInfo)
 
       blackKeys.push(
-        <g key={`black-${oct}-${semi}`} onMouseDown={() => press(midi)} className="cursor-pointer">
+        <g
+  key={`black-${oct}-${semi}`}
+  onMouseDown={(e) => {
+    e.stopPropagation()
+    press(midi)
+  }}
+  className="cursor-pointer"
+>
 
           <rect
             x={x}
