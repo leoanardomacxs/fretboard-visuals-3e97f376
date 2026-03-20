@@ -7,7 +7,7 @@ interface PianoKeyboardProps {
     note: string
     degree?: number
     interval?: string
-    function?: "tonic" | "subdominant" | "dominant"
+    function?: "root" | "chord"
     isRoot?: boolean
   }>
   startOctave?: number
@@ -45,9 +45,8 @@ const NOTE_HUES: Record<string, number> = {
 }
 
 const FUNCTION_HUES = {
-  tonic: 255,
-  subdominant: 145,
-  dominant: 18,
+  root: 280,
+  chord: 145,
 }
 
 const STAGE_LIGHTNESS = [55, 68, 40] // 3 estágios reais
@@ -252,5 +251,7 @@ const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
     </div>
   )
 }
+
+
 
 export default PianoKeyboard

@@ -49,10 +49,10 @@ interface ControlPanelProps {
 
 // Color variant palettes — each mode has multiple palettes that cycle on re-click
 const DEGREE_PALETTES: string[][] = [
-  // 0: Default (warm/cool mix)
-  ['0 75% 55%', '210 75% 55%', '145 65% 42%', '220 12% 55%', '28 90% 55%', '270 60% 55%', '220 20% 25%'],
-  // 1: Rainbow (espectro cromático)
+  // 0: Rainbow (espectro cromático)
   ['0 80% 50%', '30 90% 50%', '60 80% 45%', '120 65% 40%', '200 80% 50%', '260 70% 55%', '310 70% 50%'],
+  // 1: Default (warm/cool mix)
+  ['0 75% 55%', '210 75% 55%', '145 65% 42%', '220 12% 55%', '28 90% 55%', '270 60% 55%', '220 20% 25%'],
   // 2: Ocean (tons frios)
   ['190 80% 40%', '210 85% 50%', '230 75% 55%', '170 60% 42%', '250 65% 55%', '280 50% 50%', '200 30% 35%'],
   // 3: Sunset (tons quentes)
@@ -363,9 +363,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </Section>
 
       {/* Braço */}
-      <Section title="Braço">
-        <Toggle label="Mostrar até casa 24" checked={show24Frets} onChange={setShow24Frets} />
-      </Section>
+      <Section title={instrument === 'piano' ? 'Teclado' : 'Braço'}>
+  <Toggle
+    label={instrument === 'piano' ? 'Dobrar Piano' : 'Mostrar até casa 24'}
+    checked={show24Frets}
+    onChange={setShow24Frets}
+  />
+</Section>
 
       {/* Dark mode */}
       <Section title="Tema">

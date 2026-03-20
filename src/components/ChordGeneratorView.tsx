@@ -53,6 +53,27 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot, 
   const typeRef = useRef<HTMLDivElement>(null);
   const categories = useMemo(() => getChordTypeCategories(), []);
 
+  const getMinFret = (v: ChordVoicing) => {
+  const frets = v.frets.filter(f => f !== null);
+
+  if (!frets.length) return 999;
+
+  const fretted = frets.filter(f => f > 0);
+
+  return fretted.length ? Math.min(...fretted) : 0;
+};
+
+const sortByFretProximity = (a: ChordVoicing, b: ChordVoicing) => {
+  const minA = getMinFret(a);
+  const minB = getMinFret(b);
+
+  if (minA !== minB) return minA - minB;
+
+  return a.score - b.score;
+};
+
+
+
   // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -70,20 +91,23 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot, 
       const allVoicings: (ChordVoicing & { displayType?: string })[] = [];
       for (const [key, def] of Object.entries(CHORD_TYPES)) {
         if (key === 'maj9no5') continue;
-        const v = genFn(root, key, 3);
+        const v = genFn(root, key, 20);
         v.forEach(voicing => allVoicings.push({ ...voicing, typeLabel: def.label || key }));
       }
-      allVoicings.sort((a, b) => a.startFret - b.startFret || a.score - b.score);
+      allVoicings.sort(sortByFretProximity);
       return allVoicings;
     }
     if (selectedType === 'maj9') {
       const full = genFn(root, 'maj9', 25);
       const no5 = genFn(root, 'maj9no5', 25);
       const combined = [...full, ...no5];
-      combined.sort((a, b) => a.score - b.score || a.startFret - b.startFret);
-      return combined.slice(0, 40);
+      combined.sort(sortByFretProximity);
+      return combined
+  .sort(sortByFretProximity)
+  .slice(0, 40);
     }
-    return genFn(root, selectedType, 40);
+    return genFn(root, selectedType, 200)
+  .sort(sortByFretProximity);
   }, [root, selectedType, instrument]);
 
   const triadInversions = useMemo(
@@ -120,7 +144,7 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot, 
       .filter(([, voicings]) => voicings.length > 0)
       .map(([inversion, voicings]) => ({
         inversion,
-        voicings: voicings.sort((a, b) => a.startFret - b.startFret),
+        voicings: voicings.sort(sortByFretProximity),
       }));
   }, [triadInversions, isTriadType]);
 

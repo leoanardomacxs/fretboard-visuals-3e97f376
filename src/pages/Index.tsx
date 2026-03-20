@@ -54,7 +54,7 @@ const Index: React.FC = () => {
 
   const harmonicField = useMemo(() => getHarmonicField(root), [root]);
   const scaleHarmonicField = useMemo(() => getHarmonicFieldForScale(root, scaleType), [root, scaleType]);
-
+  const flats = useFlats(root);
   // Auto-select first chord when switching to chord mode
   useEffect(() => {
     if ((viewMode === 'chord' || viewMode === 'improvisation') && !selectedChord) {
@@ -138,9 +138,10 @@ const Index: React.FC = () => {
     if (instrument === 'piano') {
   return (
     <PianoKeyboard
-      highlightedNotes={props.pianoNotes || pianoScaleNotes}
-      colorMode={props.colorMode || colorMode}
-    />
+  highlightedNotes={props.pianoNotes || pianoScaleNotes}
+  colorMode={props.colorMode || colorMode}
+  octaves={show24Frets ? 4 : 2}
+/>
   );
 }
     if (instrument === 'bass') {
@@ -313,7 +314,6 @@ const Index: React.FC = () => {
 
   const renderChordView = () => {
     if (!selectedChord) return null;
-    const flats = useFlats(root);
     const chordNotes = filterByNotes(currentFretNotes, selectedChord.notes, selectedChord.root);
     const arpNotes = showArpeggio
       ? filterByNotes(currentFretNotes, getArpeggio(selectedChord.root, selectedChord.quality, flats), selectedChord.root)
@@ -323,9 +323,11 @@ const Index: React.FC = () => {
       : [];
 
     const chordPianoNotes = selectedChord.notes.map((note, i) => ({
-      note, degree: i === 0 ? 1 : undefined, isRoot: i === 0,
-    }));
-
+  note,
+  degree: i === 0 ? 1 : undefined,
+  interval: "", // 👈 adiciona isso
+  isRoot: i === 0,
+}));
     return (
       <div className="space-y-6">
         <ViewHeader
@@ -333,7 +335,7 @@ const Index: React.FC = () => {
           subtitle={`Notas: ${selectedChord.notes.join(' – ')}`}
         />
         <div className="overflow-x-auto pb-2">
-          {renderInstrument({ notes: chordNotes, showNoteNames: true, title: `Acorde ${selectedChord.name}`, subtitle: `Notas: ${selectedChord.notes.join(' ')}`, pianoNotes: chordPianoNotes as any })}
+          {renderInstrument({ notes: chordNotes, showNoteNames: true, title: `Acorde ${selectedChord.name}`, subtitle: `Notas: ${selectedChord.notes.join(' ')}`, pianoNotes: chordPianoNotes })}
         </div>
         {showArpeggio && (
           <div className="overflow-x-auto pb-2">
