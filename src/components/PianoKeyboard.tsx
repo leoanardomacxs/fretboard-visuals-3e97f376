@@ -93,7 +93,7 @@ const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
 
     if (noteInfo.isRoot) return `hsl(var(--degree-1))`
 
-    const stage = STAGE_LIGHTNESS[colorStage % 3]
+    const stage = STAGE_LIGHTNESS[colorStage % STAGE_LIGHTNESS.length]
 
     /* 🎯 DEGREE */
     if (colorMode === "degree" && noteInfo.degree) {
@@ -229,7 +229,11 @@ const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
 
   return (
     <div className={`${themeClass} inline-block`}>
-      <svg width={octaves * 7 * whiteKeyWidth + 4} height={whiteKeyHeight + 30}>
+      <svg
+  width={compact ? "100%" : "auto"}
+  height={compact ? "auto" : whiteKeyHeight + 30}
+  viewBox={`0 0 ${octaves * 7 * whiteKeyWidth + 4} ${whiteKeyHeight + 30}`}
+>
         <defs>
           <linearGradient id="whiteGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#ffffff"/>

@@ -56,7 +56,7 @@ const PianoChordGenerator: React.FC<Props> = ({
 
   const chords = useMemo(() => {
 
-    const result: any[] = []
+    const result = []
 
     for (const [key, def] of Object.entries(CHORD_TYPES)) {
 
@@ -65,10 +65,10 @@ const PianoChordGenerator: React.FC<Props> = ({
       const notes = spellChordNotes(root, def.intervals)
 
       const highlighted = notes.map((note, i) => ({
-        note,
-        degree: getDegree(note, root),
-        isRoot: i === 0
-      }))
+  note,
+  degree: getDegree(note, root) ?? 1, // <== Se undefined, usa 1
+  isRoot: i === 0
+}))
 
       result.push({
         name: `${root}${TYPE_DISPLAY[key] ?? def.label ?? ''}`,
@@ -156,13 +156,14 @@ const PianoChordGenerator: React.FC<Props> = ({
 
             {/* 🎹 PIANO REAL */}
             <PianoKeyboard
-              highlightedNotes={chord.highlighted}
-              octaves={2}
-              startOctave={3}
-              colorMode={colorMode}
-              colorStage={colorStage}
-              compact
-            />
+            highlightedNotes={chord.highlighted}
+            octaves={2}
+            startOctave={3}
+            colorMode={colorMode}          // manter modo atual
+            colorStage={colorStage + i}    // i = índice da variação
+            compact
+            themeClass="piano-theme"
+          /> 
 
             {/* notas */}
             <div className="relative text-xs mt-4 text-muted-foreground tracking-wide">
