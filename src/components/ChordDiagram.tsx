@@ -7,6 +7,7 @@ const GUITAR_OPEN_STRINGS_SEMI = [4, 9, 2, 7, 11, 4]; // E A D G B E in semitone
 
 interface ChordDiagramProps {
   voicing: ChordVoicing;
+  chordName?: string;
   width?: number;
   showNotes?: boolean;
   openStringsSemi?: number[];

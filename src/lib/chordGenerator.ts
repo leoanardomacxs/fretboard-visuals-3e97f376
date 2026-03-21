@@ -4,6 +4,7 @@ import { getNoteIndex, getNoteName, useFlats } from './musicTheory';
 const OPEN_STRINGS = [40, 45, 50, 55, 59, 64];
 const STRING_NAMES = ['E', 'A', 'D', 'G', 'B', 'E'];
 export function getBassNote(voicing: ChordVoicing): string | null {
+
   for (let s = 0; s < voicing.frets.length; s++) {
 
     const fret = voicing.frets[s]
@@ -14,18 +15,6 @@ export function getBassNote(voicing: ChordVoicing): string | null {
     const noteIndex = midi % 12
 
     return getNoteName(noteIndex)
-
-  }
-
-  return null
-} {
-    const fret = voicing.frets[s]
-
-    if (fret !== null) {
-      const midi = OPEN_STRINGS[s] + fret
-      const noteIndex = midi % 12
-      return getNoteName(noteIndex)
-    }
   }
 
   return null
@@ -162,7 +151,7 @@ function transposeVoicing(
   const newFrets: (number | null)[] = voicing.frets.map(f => {
     if (f === null) return null;
     const newF = f + semitones;
-    if (newF < 1 || newF > 17) return -1 as any; // out of range marker
+    if (newF < 1 || newF > 17) return -1 as number; // out of range marker
     return newF;
   });
 
@@ -997,7 +986,7 @@ export function generateUkuleleChordVoicings(root: string, chordType: string, ma
             root,
             typeName: chordType,
             typeLabel: typeDef.label,
-            frets: fretsArr as any,
+            frets: fretsArr as (number | null)[],
             fingers,
             barreInfo: barre,
             startFret: fretted.length > 0 ? minFret : 0,
