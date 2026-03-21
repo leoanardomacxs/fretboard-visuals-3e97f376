@@ -3,6 +3,51 @@ import { getNoteIndex, getNoteName, useFlats } from './musicTheory';
 // Standard tuning MIDI: E2=40, A2=45, D3=50, G3=55, B3=59, E4=64
 const OPEN_STRINGS = [40, 45, 50, 55, 59, 64];
 const STRING_NAMES = ['E', 'A', 'D', 'G', 'B', 'E'];
+export function getBassNote(voicing: ChordVoicing): string | null {
+  for (let s = 0; s < voicing.frets.length; s++) {
+
+    const fret = voicing.frets[s]
+
+    if (fret === null) continue
+
+    const midi = OPEN_STRINGS[s] + fret
+    const noteIndex = midi % 12
+
+    return getNoteName(noteIndex)
+
+  }
+
+  return null
+} {
+    const fret = voicing.frets[s]
+
+    if (fret !== null) {
+      const midi = OPEN_STRINGS[s] + fret
+      const noteIndex = midi % 12
+      return getNoteName(noteIndex)
+    }
+  }
+
+  return null
+}
+
+export function getChordNameWithBass(
+  voicing: ChordVoicing,
+  showInversions: boolean
+): string {
+
+  const baseName = `${voicing.root}${voicing.typeLabel || ''}`
+
+  if (!showInversions) return baseName
+
+  const bass = getBassNote(voicing)
+
+  if (!bass) return baseName
+
+  if (bass === voicing.root) return baseName
+
+  return `${baseName}/${bass}`
+}
 
 // Chord type definitions: intervals from root in semitones
 export const CHORD_TYPES: Record<string, { intervals: number[]; label: string; category: string }> = {
@@ -44,6 +89,7 @@ export interface ChordVoicing {
   barreInfo: { fret: number; fromString: number; toString: number } | null;
   startFret: number; // lowest fretted position (for diagram offset)
   score: number; // lower = easier
+  difficulty?: 'easy' | 'medium' | 'hard';
 }
 
 export interface TriadVoicing extends ChordVoicing {
@@ -172,7 +218,14 @@ function transposeVoicing(
   }
 
   const barreWidth = barre ? (barre.toString - barre.fromString + 1) : 0;
-  const stretchPenalty = span <= 1 ? 0 : span === 2 ? 6 : span === 3 ? 16 : span === 4 ? 30 : 50;
+  // penalidade forte para acordes muito espalhados
+const stretchPenalty =
+  span <= 1 ? 0 :
+  span === 2 ? 8 :
+  span === 3 ? 25 :
+  span === 4 ? 60 :
+  span >= 5 ? 120 :
+  0;
   const barrePenalty = barre ? 15 + barreWidth * 3 : 0;
   const positionPenalty = minFret <= 3 ? 3 : minFret <= 5 ? 6 : minFret <= 7 ? 10 : 16;
   const mutedPenalty = mutedCount * 8;
@@ -483,6 +536,12 @@ function validateAndScore(
   chordType: string,
   typeLabel: string
 ): ChordVoicing | null {
+
+  function classifyDifficulty(score: number): 'easy' | 'medium' | 'hard' {
+  if (score <= 25) return 'easy';
+  if (score <= 55) return 'medium';
+  return 'hard';
+}
   const voicing = [...frets] as (number | null)[];
 
   const sounding = voicing.filter(f => f !== null);
@@ -532,7 +591,7 @@ function validateAndScore(
     if (voicing[s] === null) return null;
   }
 
-  const fretted = sounding.filter(f => f! > 0) as number[];
+  const fretted = sounding.filter(f => f !== null && f > 0) as number[];
   let minFret = 0, maxFret = 0, span = 0;
   if (fretted.length > 0) {
     minFret = Math.min(...fretted);
@@ -630,15 +689,16 @@ function validateAndScore(
   if (score > 110) return null;
 
   return {
-    root,
-    typeName: chordType,
-    typeLabel,
-    frets: voicing,
-    fingers,
-    barreInfo: barre,
-    startFret: fretted.length > 0 ? minFret : 0,
-    score,
-  };
+  root,
+  typeName: chordType,
+  typeLabel,
+  frets: voicing,
+  fingers,
+  barreInfo: barre,
+  startFret: fretted.length > 0 ? minFret : 0,
+  score,
+  difficulty: classifyDifficulty(score),
+};
 }
 
 function assignFingers(
@@ -665,6 +725,34 @@ function assignFingers(
   if (onMinFret.length >= 2 && minFret > 0) {
     const fromS = Math.min(...onMinFret);
     const toS = Math.max(...onMinFret);
+    const width = toS - fromS + 1;
+
+// Evita pestana em apenas duas cordas adjacentes
+if (onMinFret.length === 2 && width === 2) {
+  // trata como dedos separados
+  for (const s of onMinFret) {
+    if (fingerIdx > 4) return { fingers: null, barre: null, fingerCount: 5 };
+    fingers[s] = fingerIdx;
+    fingerIdx++;
+  }
+
+  const remaining: { s: number; f: number }[] = [];
+  for (let s = 0; s < 6; s++) {
+    if (voicing[s] !== null && voicing[s]! > 0 && fingers[s] === null) {
+      remaining.push({ s, f: voicing[s]! });
+    }
+  }
+
+  remaining.sort((a, b) => a.f - b.f || a.s - b.s);
+
+  for (const r of remaining) {
+    if (fingerIdx > 4) return { fingers: null, barre: null, fingerCount: 5 };
+    fingers[r.s] = fingerIdx++;
+  }
+
+  const totalFingers = remaining.length + onMinFret.length;
+  return { fingers, barre: null, fingerCount: totalFingers };
+}
 
     // Only draw a barre if all strings between fromS and toS are fretted
     // at or above the minFret (no muted strings AND no open strings in between)

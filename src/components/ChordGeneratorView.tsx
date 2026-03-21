@@ -4,7 +4,56 @@ import { generateChordVoicings, generateTriadInversions, generateUkuleleChordVoi
 import type { TriadVoicing, ChordVoicing } from '@/lib/chordGenerator';
 import { ALL_ROOTS, NOTES, spellChordNotes } from '@/lib/musicTheory';
 import { ChevronDown } from 'lucide-react';
+import { getChordNameWithBass } from '@/lib/chordGenerator'
 import { playChordFromFrets, playClick } from '@/lib/audioEngine';
+function hasBarre(voicing: ChordVoicing) {
+  const frets = voicing.frets
+  const map = new Map<number, number>()
+  
+
+  frets.forEach(f => {
+    if (f !== null && f > 0) {
+      map.set(f, (map.get(f) || 0) + 1)
+    }
+  })
+
+  for (const [, count] of map) {
+    if (count >= 3) return true
+  }
+
+  return false
+}
+
+function calculateChordDifficulty(voicing: ChordVoicing) {
+  const frets = voicing.frets.filter(f => f !== null) as number[]
+
+  if (!frets.length) return 0
+
+  const fretted = frets.filter(f => f > 0)
+
+  const max = Math.max(...frets)
+  const min = Math.min(...fretted)
+
+  const span = max - min
+  const fingerCount = fretted.length
+  const barre = hasBarre(voicing)
+
+  let score = 0
+
+  score += span * 2
+  score += fingerCount
+  score += min * 0.4
+
+  if (barre) score += 3
+
+  return score
+}
+
+function getDifficultyLabel(score: number) {
+  if (score < 6) return "easy"
+  if (score < 10) return "medium"
+  return "hard"
+}
 
 const INTERVAL_NAMES: Record<number, string> = {
   0: 'Tônica', 2: '2ª maior', 3: '3ª menor', 4: '3ª maior',
@@ -49,10 +98,11 @@ const ChordGeneratorView: React.FC<ChordGeneratorViewProps> = ({ root, setRoot, 
   const [rootOpen, setRootOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showInversions, setShowInversions] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const typeRef = useRef<HTMLDivElement>(null);
   const categories = useMemo(() => getChordTypeCategories(), []);
-
+  
   const getMinFret = (v: ChordVoicing) => {
   const frets = v.frets.filter(f => f !== null);
 
@@ -260,6 +310,7 @@ const sortByFretProximity = (a: ChordVoicing, b: ChordVoicing) => {
                 : 'border-border bg-card hover:bg-secondary/60'
             }`}
           >
+          
             <div className="flex flex-col text-left">
               <span className={`text-sm font-bold ${showNotes ? 'text-primary' : 'text-foreground'}`}>
                 {chordFormula.notes.join(' + ')}
@@ -275,6 +326,27 @@ const sortByFretProximity = (a: ChordVoicing, b: ChordVoicing) => {
             </span>
           </button>
         )}
+
+        <button
+  onClick={() => setShowInversions(!showInversions)}
+  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-all ${
+    showInversions
+      ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
+      : 'border-border bg-card hover:bg-secondary/60'
+  }`}
+>
+  <span className={`text-sm font-semibold ${showInversions ? 'text-primary' : 'text-foreground'}`}>
+    Mostrar inversões
+  </span>
+
+  <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${
+    showInversions
+      ? 'bg-primary text-primary-foreground'
+      : 'bg-muted text-muted-foreground'
+  }`}>
+    {showInversions ? 'ON' : 'OFF'}
+  </span>
+</button>
       </div>
 
       {/* Results count + difficulty legend */}
@@ -318,7 +390,13 @@ const sortByFretProximity = (a: ChordVoicing, b: ChordVoicing) => {
                 style={{ animationDelay: `${i * 20}ms` }}
                 onClick={() => playChordFromFrets(v.frets)}
               >
-                <ChordDiagram voicing={v} width={140} showNotes={showNotes} openStringsSemi={chordDiagramSemi} />
+                <ChordDiagram
+                voicing={v}
+                width={140}
+                showNotes={showNotes}
+                openStringsSemi={chordDiagramSemi}
+                chordName={getChordNameWithBass(v, showInversions)}
+/>
                 <div className="mt-1 text-[10px] text-muted-foreground font-mono">
                   {v.frets.map(f => f === null ? 'X' : String(f)).join(' ')}
                 </div>
